@@ -8,7 +8,7 @@ import (
 	"os"
 	"regexp"
 	log "github.com/sirupsen/logrus"
-	// "reflect"
+	"flag"
 )
 
 type CiscoInterface struct {
@@ -31,24 +31,20 @@ const(
 )
 
 func main() {
-	log.Info("program started")
+	var ifile = flag.String("i", "", "input configuration file to parse data from")
+	var ofile = flag.String("o", "", "output csv file")
+	fmt.Print(*ifile, *ofile)
+	flag.Parse()
+	log.Info("program started...")
 
-	if len(os.Args) > 1 {
-		f, err := os.Open(os.Args[1])
-		if err != nil {
-			log.Fatal("Error: ", err)
-		}
-		defer f.Close()
-		log.Infof("got the file: %s", f.Name())
-		interface_map := parsing(f)
-		// for k,v := range interface_map {							// for debug
-		// 	fmt.Printf("interface: %s, content: %+v\n", k, *v)
-		// }
-		ToCSV(interface_map, "output.csv")
-
-	} else {
-		log.Fatal("No filename specified!")
+	f, err := os.Open(*ifile)
+	if err != nil {
+		log.Fatalf("Can not open file %sq because of: %q", *ifile, err)
 	}
+	log.Infof("Got %q configuration file for parsing...", *ifile)
+	defer f.Close()
+	interface_map := parsing(f)
+	ToCSV(interface_map, *ofile)
 }
 
 func parsing(f *os.File) map[string]*CiscoInterface {
@@ -115,5 +111,5 @@ func ToCSV(intf_map map[string]*CiscoInterface, filename string) {
 		w.Write(line)
 	}
 	w.Flush()
-	log.Info("Writing to CSV done")
+	log.Infof("Writing CSV to %q done", filename)
 }
