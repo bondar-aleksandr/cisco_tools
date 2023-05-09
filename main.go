@@ -17,10 +17,12 @@ type CiscoInterface struct {
 	Ip_addr string
 	Subnet string
 	Vrf string
+	ACLin string
+	ACLout string
 }
 
 func (c CiscoInterface) ToSlice() []string {
-	return []string{c.Name, c.Description, c.Ip_addr, c.Subnet, c.Vrf}
+	return []string{c.Name, c.Description, c.Ip_addr, c.Subnet, c.Vrf, c.ACLin, c.ACLout}
 }
 
 const(
@@ -28,18 +30,19 @@ const(
 	DESC_REGEXP = ` description (.*)$`
 	IP_REGEXP = ` ip(?:v4)? address (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?: secondary)?`
 	VRF_REGEXP = ` vrf(?: forwarding)? (\S+)`
+	ACLIN_REGEXP = ` access-group (\S+) in`
+	ACLOUT_REGEXP = ` access-group (\S+) out`
 )
 
 func main() {
 	var ifile = flag.String("i", "", "input configuration file to parse data from")
 	var ofile = flag.String("o", "", "output csv file")
-	fmt.Print(*ifile, *ofile)
 	flag.Parse()
 	log.Info("program started...")
 
 	f, err := os.Open(*ifile)
 	if err != nil {
-		log.Fatalf("Can not open file %sq because of: %q", *ifile, err)
+		log.Fatalf("Can not open file %q because of: %q", *ifile, err)
 	}
 	log.Infof("Got %q configuration file for parsing...", *ifile)
 	defer f.Close()
@@ -53,6 +56,8 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 	desc_compiled := regexp.MustCompile(DESC_REGEXP)
 	ip_compiled := regexp.MustCompile(IP_REGEXP)
 	vrf_compiled := regexp.MustCompile(VRF_REGEXP)
+	aclin_compiled := regexp.MustCompile(ACLIN_REGEXP)
+	aclout_compiled := regexp.MustCompile(ACLOUT_REGEXP)
 
 	interfaces := map[string]*CiscoInterface{}
 	var intf_name string
@@ -88,6 +93,14 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 			} else if match, _ := regexp.Match(VRF_REGEXP, scanner.Bytes()); match {
 				vrf := vrf_compiled.FindStringSubmatch(scanner.Text())[1]
 				interfaces[intf_name].Vrf = vrf
+
+			} else if match, _ := regexp.Match(ACLIN_REGEXP, scanner.Bytes()); match {
+				aclin := aclin_compiled.FindStringSubmatch(scanner.Text())[1]
+				interfaces[intf_name].ACLin = aclin
+
+			} else if match, _ := regexp.Match(ACLOUT_REGEXP, scanner.Bytes()); match {
+				aclout := aclout_compiled.FindStringSubmatch(scanner.Text())[1]
+				interfaces[intf_name].ACLout = aclout
 			}
 
 		} else if match, _ := (regexp.Match(`^!|^interface`, scanner.Bytes())); !match && len(interfaces) > 0 {
@@ -104,7 +117,7 @@ func ToCSV(intf_map map[string]*CiscoInterface, filename string) {
 		log.Fatal("Error in writing csv data to file:", err)
 	}
 	w := csv.NewWriter(f)
-	headers := []string{"name", "description", "ip_addr", "subnet", "vrf"}
+	headers := []string{"name", "description", "ip_addr", "subnet", "vrf", "ACL-in", "ACL-out"}
 	w.Write(headers)
 	for _,v := range(intf_map) {
 		line := v.ToSlice()
