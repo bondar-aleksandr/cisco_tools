@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"net"
 	"os"
 	"regexp"
-	log "github.com/sirupsen/logrus"
-	"flag"
+	"sort"
 	"strings"
+	log "github.com/sirupsen/logrus"
 )
 
 type CiscoInterface struct {
@@ -24,6 +25,17 @@ type CiscoInterface struct {
 
 func (c CiscoInterface) ToSlice() []string {
 	return []string{c.Name, c.Description, c.Ip_addr, c.Subnet, c.Vrf, c.ACLin, c.ACLout}
+}
+
+type CiscoInterfaceMap map[string]*CiscoInterface
+
+func (c CiscoInterfaceMap) GetSortedKeys() []string {
+	keys := make([]string,0)
+	for k := range c {
+		keys = append(keys,k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 const(
@@ -51,7 +63,7 @@ func main() {
 	ToCSV(interface_map, *ofile)
 }
 
-func parsing(f *os.File) map[string]*CiscoInterface {
+func parsing(f *os.File) CiscoInterfaceMap {
 
 	intf_compiled := regexp.MustCompile(INTF_REGEXP)
 	desc_compiled := regexp.MustCompile(DESC_REGEXP)
@@ -60,7 +72,7 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 	aclin_compiled := regexp.MustCompile(ACLIN_REGEXP)
 	aclout_compiled := regexp.MustCompile(ACLOUT_REGEXP)
 
-	interfaces := map[string]*CiscoInterface{}
+	interfaces := CiscoInterfaceMap{}
 	var intf_name string
 
 	scanner := bufio.NewScanner(f)
@@ -111,7 +123,7 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 	return interfaces
 }
 
-func ToCSV(intf_map map[string]*CiscoInterface, filename string) {
+func ToCSV(intf_map CiscoInterfaceMap, filename string) {
 	f, err := os.Create(filename)
 	if err != nil {
 		log.Fatal("Error in writing csv data to file:", err)
@@ -119,8 +131,9 @@ func ToCSV(intf_map map[string]*CiscoInterface, filename string) {
 	w := csv.NewWriter(f)
 	headers := []string{"name", "description", "ip_addr", "subnet", "vrf", "ACL-in", "ACL-out"}
 	w.Write(headers)
-	for _,v := range(intf_map) {
-		line := v.ToSlice()
+
+	for _,v := range intf_map.GetSortedKeys() {
+		line := intf_map[v].ToSlice()
 		w.Write(line)
 	}
 	w.Flush()
