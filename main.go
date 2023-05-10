@@ -9,6 +9,7 @@ import (
 	"regexp"
 	log "github.com/sirupsen/logrus"
 	"flag"
+	"strings"
 )
 
 type CiscoInterface struct {
@@ -42,9 +43,9 @@ func main() {
 
 	f, err := os.Open(*ifile)
 	if err != nil {
-		log.Fatalf("Can not open file %q because of: %q", *ifile, err)
+		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
 	}
-	log.Infof("Got %q configuration file for parsing...", *ifile)
+	log.Infof("Got %s configuration file for parsing...", *ifile)
 	defer f.Close()
 	interface_map := parsing(f)
 	ToCSV(interface_map, *ofile)
@@ -64,14 +65,13 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		// line := scanner.Text()	// for debug
-		// fmt.Println(line)
-		if match, _ := regexp.Match(`^interface `, scanner.Bytes()); match {
+
+		if strings.HasPrefix(scanner.Text(),`interface `) {
 
 			intf_name = intf_compiled.FindStringSubmatch(scanner.Text())[1]
 			interfaces[intf_name] = &CiscoInterface{Name: intf_name}
 
-		} else if match, _ := regexp.Match(`^ `, scanner.Bytes()); match && len(interfaces) > 0 {
+		} else if strings.HasPrefix(scanner.Text(), ` `) && len(interfaces) > 0 {
 
 			if match, _ := regexp.Match(DESC_REGEXP, scanner.Bytes()); match {
 				intf_desc := desc_compiled.FindStringSubmatch(scanner.Text())[1]
@@ -103,7 +103,7 @@ func parsing(f *os.File) map[string]*CiscoInterface {
 				interfaces[intf_name].ACLout = aclout
 			}
 
-		} else if match, _ := (regexp.Match(`^!|^interface`, scanner.Bytes())); !match && len(interfaces) > 0 {
+		} else if (!(strings.HasPrefix(`!`, scanner.Text()) || strings.HasPrefix(`interface`, scanner.Text())) && len(interfaces) > 0) {
 			log.Info("parsing finished")
 			break
 		}
@@ -124,5 +124,5 @@ func ToCSV(intf_map map[string]*CiscoInterface, filename string) {
 		w.Write(line)
 	}
 	w.Flush()
-	log.Infof("Writing CSV to %q done", filename)
+	log.Infof("Writing CSV to %s done", filename)
 }
