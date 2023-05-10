@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	log "github.com/sirupsen/logrus"
+	"reflect"
 )
 
 type CiscoInterface struct {
@@ -36,6 +37,15 @@ func (c CiscoInterfaceMap) GetSortedKeys() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func (c CiscoInterfaceMap) GetFields() []string {
+	fields := reflect.VisibleFields(reflect.TypeOf(CiscoInterface{}))
+	result := []string{}
+	for _,v := range(fields) {
+		result = append(result, v.Name)
+	}
+	return result
 }
 
 const(
@@ -129,7 +139,7 @@ func ToCSV(intf_map CiscoInterfaceMap, filename string) {
 		log.Fatal("Error in writing csv data to file:", err)
 	}
 	w := csv.NewWriter(f)
-	headers := []string{"name", "description", "ip_addr", "subnet", "vrf", "ACL-in", "ACL-out"}
+	headers := intf_map.GetFields()
 	w.Write(headers)
 
 	for _,v := range intf_map.GetSortedKeys() {
