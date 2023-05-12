@@ -99,18 +99,25 @@ func parsing(f *os.File) CiscoInterfaceMap {
 				intf_desc := desc_compiled.FindStringSubmatch(scanner.Text())[1]
 				interfaces[intf_name].Description = intf_desc
 
-			} else if match, _ := regexp.Match(IP_REGEXP, scanner.Bytes()); match {
-				ip_str := ip_compiled.FindStringSubmatch(scanner.Text())[1]
-				mask_str := ip_compiled.FindStringSubmatch(scanner.Text())[2]
+			} else if strings.HasPrefix(scanner.Text(), ` ip address`) || strings.HasPrefix(scanner.Text(), ` ipv4 address`) {
 
-				ip := net.ParseIP(ip_str).To4()
-				mask := net.IPMask(net.ParseIP(mask_str).To4())
-				mask_cidr, _ := mask.Size()
-				net_addr := ip.Mask(mask)
-				ip_cidr := fmt.Sprintf("%s/%v", ip.String(), mask_cidr)
-				prefix := fmt.Sprintf("%s/%v", net_addr.String(), mask_cidr)
-				interfaces[intf_name].Ip_addr = ip_cidr
-				interfaces[intf_name].Subnet = prefix
+				if strings.HasPrefix(scanner.Text(), ` ip address dhcp`) || strings.HasPrefix(scanner.Text(), ` ipv4 address dhcp`) {
+					interfaces[intf_name].Ip_addr = "dhcp"
+					interfaces[intf_name].Subnet = "dhcp"
+					
+				} else {
+					ip_str := ip_compiled.FindStringSubmatch(scanner.Text())[1]
+					mask_str := ip_compiled.FindStringSubmatch(scanner.Text())[2]
+
+					ip := net.ParseIP(ip_str).To4()
+					mask := net.IPMask(net.ParseIP(mask_str).To4())
+					mask_cidr, _ := mask.Size()
+					net_addr := ip.Mask(mask)
+					ip_cidr := fmt.Sprintf("%s/%v", ip.String(), mask_cidr)
+					prefix := fmt.Sprintf("%s/%v", net_addr.String(), mask_cidr)
+					interfaces[intf_name].Ip_addr = ip_cidr
+					interfaces[intf_name].Subnet = prefix
+				}
 
 			} else if match, _ := regexp.Match(VRF_REGEXP, scanner.Bytes()); match {
 				vrf := vrf_compiled.FindStringSubmatch(scanner.Text())[1]
@@ -125,8 +132,8 @@ func parsing(f *os.File) CiscoInterfaceMap {
 				interfaces[intf_name].ACLout = aclout
 			}
 
-		} else if (!(strings.HasPrefix(`!`, scanner.Text()) || strings.HasPrefix(`interface`, scanner.Text())) && len(interfaces) > 0) {
-			log.Info("parsing finished")
+		} else if (!(strings.HasPrefix(scanner.Text(), `!`) || strings.HasPrefix(scanner.Text(), `interface`)) && len(interfaces) > 0) {
+			log.Infof("parsing finished, got %v interfaces", len(interfaces))
 			break
 		}
 	}

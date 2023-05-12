@@ -1,0 +1,4 @@
+*.txt
+*.csv
+*.exe
+go.sum
