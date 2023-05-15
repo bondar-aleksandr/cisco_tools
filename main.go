@@ -20,12 +20,13 @@ type CiscoInterface struct {
 	Ip_addr string
 	Subnet string
 	Vrf string
+	Mtu string
 	ACLin string
 	ACLout string
 }
 
 func (c CiscoInterface) ToSlice() []string {
-	return []string{c.Name, c.Description, c.Ip_addr, c.Subnet, c.Vrf, c.ACLin, c.ACLout}
+	return []string{c.Name, c.Description, c.Ip_addr, c.Subnet, c.Vrf, c.Mtu, c.ACLin, c.ACLout}
 }
 
 type CiscoInterfaceMap map[string]*CiscoInterface
@@ -53,6 +54,7 @@ const(
 	DESC_REGEXP = ` {1,2}description (.*)$`
 	IP_REGEXP = ` {1,2}ip(?:v4)? address (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?: secondary)?`
 	VRF_REGEXP = ` {1,2}vrf(?: forwarding| member)? (\S+)`
+	MTU_REGEXP = ` {1,2}(?:ip )?mtu (\S+)`
 	ACLIN_REGEXP = ` {1,2}access-group (\S+) in`
 	ACLOUT_REGEXP = ` {1,2}access-group (\S+) out`
 )
@@ -62,6 +64,7 @@ var (
 	desc_compiled = regexp.MustCompile(DESC_REGEXP)
 	ip_compiled = regexp.MustCompile(IP_REGEXP)
 	vrf_compiled = regexp.MustCompile(VRF_REGEXP)
+	mtu_compiled = regexp.MustCompile(MTU_REGEXP)
 	aclin_compiled = regexp.MustCompile(ACLIN_REGEXP)
 	aclout_compiled = regexp.MustCompile(ACLOUT_REGEXP)
 )
@@ -80,7 +83,7 @@ func main() {
 	}
 	defer f.Close()
 	interface_map := parsing(f, *devtype)
-	// for k,v := range(interface_map) {
+	// for k,v := range(interface_map) {		// for debug
 	// 	fmt.Printf("%s: %+v\n", k,v)
 	// }
 	ToCSV(interface_map, *ofile)
@@ -130,40 +133,44 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 
-		line := scanner.Text()
-		fmt.Println(line)
+		line := strings.TrimRight(scanner.Text(), " ")
+		// fmt.Println(line)	// for debug
 
-		if strings.HasPrefix(scanner.Text(),`interface `) {
+		if strings.HasPrefix(line,`interface `) {					//Enter interface configuration block
 
-			intf_name = intf_compiled.FindStringSubmatch(scanner.Text())[1]
+			intf_name = intf_compiled.FindStringSubmatch(line)[1]
 			interfaces[intf_name] = &CiscoInterface{Name: intf_name}
 
-		} else if strings.HasPrefix(scanner.Text(), line_ident) && len(interfaces) > 0 {
+		} else if strings.HasPrefix(line, line_ident) && len(interfaces) > 0 {		//Content inside interface config
 
-			if match, _ := regexp.Match(DESC_REGEXP, scanner.Bytes()); match {
-				intf_desc := desc_compiled.FindStringSubmatch(scanner.Text())[1]
+			if strings.Contains(line, ` description `) {
+				intf_desc := desc_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].Description = intf_desc
 
-			} else if strings.HasPrefix(scanner.Text(), fmt.Sprintf("%sip address", line_ident)) || strings.HasPrefix(scanner.Text(), fmt.Sprintf("%sipv4 address", line_ident)) {
+			} else if strings.Contains(line, `ip address `) || strings.Contains(line, `ipv4 address `) {
 			
 					ip_cidr, prefix := getIP(scanner.Text(), d)
 					interfaces[intf_name].Ip_addr = ip_cidr
 					interfaces[intf_name].Subnet = prefix
 
-			} else if match, _ := regexp.Match(VRF_REGEXP, scanner.Bytes()); match {
-				vrf := vrf_compiled.FindStringSubmatch(scanner.Text())[1]
+			} else if strings.Contains(line, ` vrf `) {
+				vrf := vrf_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].Vrf = vrf
+			
+			} else if strings.Contains(line, ` mtu `) {
+				mtu := mtu_compiled.FindStringSubmatch(line)[1]
+				interfaces[intf_name].Mtu = mtu
 
-			} else if match, _ := regexp.Match(ACLIN_REGEXP, scanner.Bytes()); match {
-				aclin := aclin_compiled.FindStringSubmatch(scanner.Text())[1]
+			} else if strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` in`) {
+				aclin := aclin_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].ACLin = aclin
 
-			} else if match, _ := regexp.Match(ACLOUT_REGEXP, scanner.Bytes()); match {
-				aclout := aclout_compiled.FindStringSubmatch(scanner.Text())[1]
+			} else if strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` out`) {
+				aclout := aclout_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].ACLout = aclout
 			}
 
-		} else if !(strings.HasPrefix(scanner.Text(), line_separator) || strings.HasPrefix(scanner.Text(), `interface`)) && len(interfaces) > 0 {
+		} else if !(line == line_separator || strings.HasPrefix(line, `interface`)) && len(interfaces) > 0 {	//Exit interface configuration block
 			break
 		}
 	}
