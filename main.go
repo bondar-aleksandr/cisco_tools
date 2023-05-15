@@ -83,9 +83,6 @@ func main() {
 	}
 	defer f.Close()
 	interface_map := parsing(f, *devtype)
-	// for k,v := range(interface_map) {		// for debug
-	// 	fmt.Printf("%s: %+v\n", k,v)
-	// }
 	ToCSV(interface_map, *ofile)
 }
 
@@ -143,29 +140,29 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 
 		} else if strings.HasPrefix(line, line_ident) && len(interfaces) > 0 {		//Content inside interface config
 
-			if strings.Contains(line, ` description `) {
+			switch {
+			case strings.Contains(line, ` description `):
 				intf_desc := desc_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].Description = intf_desc
 
-			} else if strings.Contains(line, `ip address `) || strings.Contains(line, `ipv4 address `) {
-			
-					ip_cidr, prefix := getIP(scanner.Text(), d)
-					interfaces[intf_name].Ip_addr = ip_cidr
-					interfaces[intf_name].Subnet = prefix
+			case strings.Contains(line, `ip address `) || strings.Contains(line, `ipv4 address `):
+				ip_cidr, prefix := getIP(scanner.Text(), d)
+				interfaces[intf_name].Ip_addr = ip_cidr
+				interfaces[intf_name].Subnet = prefix	
 
-			} else if strings.Contains(line, ` vrf `) {
+			case strings.Contains(line, ` vrf `):
 				vrf := vrf_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].Vrf = vrf
 			
-			} else if strings.Contains(line, ` mtu `) {
+			case strings.Contains(line, ` mtu `):
 				mtu := mtu_compiled.FindStringSubmatch(line)[1]
-				interfaces[intf_name].Mtu = mtu
+				interfaces[intf_name].Mtu = mtu	
 
-			} else if strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` in`) {
+			case strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` in`):
 				aclin := aclin_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].ACLin = aclin
 
-			} else if strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` out`) {
+			case strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` out`):
 				aclout := aclout_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].ACLout = aclout
 			}
