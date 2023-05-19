@@ -93,7 +93,7 @@ func main() {
 	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
 
 	flag.Parse()
-	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s", *ifile, *ofile, *devtype)
+	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s, JSON output: %v", *ifile, *ofile, *devtype, *jsonOut)
 
 	f, err := os.Open(*ifile)
 	if err != nil {
