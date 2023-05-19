@@ -3,15 +3,17 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
+	"path/filepath"
 	log "github.com/sirupsen/logrus"
-	"reflect"
 )
 
 type CiscoInterface struct {
@@ -49,6 +51,16 @@ func (c CiscoInterfaceMap) GetFields() []string {
 	return result
 }
 
+func (c CiscoInterfaceMap) ToJSON(filename string) {		// For testing purpose, to get structured data to deserialize from
+	json_data, _ := json.MarshalIndent(c, "", "  ")
+	json_file := fileExtReplace(filename, "json")
+	err := os.WriteFile(json_file, json_data, 0666)
+	if err != nil {
+		log.Error("Unable to write json data because of:", err)
+	}
+	log.Infof("Saved json data to %s file", json_file)
+}
+
 const(
 	INTF_REGEXP = `^interface (\S+)`
 	DESC_REGEXP = ` {1,2}description (.*)$`
@@ -69,10 +81,16 @@ var (
 	aclout_compiled = regexp.MustCompile(ACLOUT_REGEXP)
 )
 
+func fileExtReplace(f string, ex string) string {
+	bareName := strings.TrimSuffix(f, filepath.Ext(f))
+	return fmt.Sprintf("%s.%s", bareName, ex)
+}
+
 func main() {
 	var ifile = flag.String("i", "", "input configuration file to parse data from")
-	var ofile = flag.String("o", "", "output csv file")
+	var ofile = flag.String("o", "", "output csv file, default is input filename with .csv extension")
 	var devtype = flag.String("t", "ios", "cisco OS family, possible values are ios, nxos. Default is ios")
+	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
 
 	flag.Parse()
 	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s", *ifile, *ofile, *devtype)
@@ -82,8 +100,18 @@ func main() {
 		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
 	}
 	defer f.Close()
-	interface_map := parsing(f, *devtype)
+
+	interface_map := parsing(f, *devtype)	
+
+	if *ofile == "" {
+		*ofile = fileExtReplace(*ifile, "csv")
+	}
+
 	ToCSV(interface_map, *ofile)
+
+	if *jsonOut {						// Optional step to store json data needed in testing
+		interface_map.ToJSON(*ifile)
+	}
 }
 
 func getIP(s string, d string) (ip_addr, subnet string) {
@@ -178,8 +206,9 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 func ToCSV(intf_map CiscoInterfaceMap, filename string) {
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("Error in writing csv data to file:", err)
+		log.Fatalf("Error in writing csv data to file %s because of: %q", f, err)
 	}
+	defer f.Close()
 	w := csv.NewWriter(f)
 	headers := intf_map.GetFields()
 	w.Write(headers)
