@@ -1,4 +1,5 @@
 *.txt
 *.csv
 *.exe
+*.json
 go.sum
