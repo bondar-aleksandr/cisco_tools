@@ -1,10 +1,10 @@
-package main
+package parser
 
 import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
-	"flag"
+	// "flag"
 	"fmt"
 	"net"
 	"os"
@@ -53,7 +53,7 @@ func (c CiscoInterfaceMap) GetFields() []string {
 
 func (c CiscoInterfaceMap) ToJSON(filename string) {		// For testing purpose, to get structured data to deserialize from
 	json_data, _ := json.MarshalIndent(c, "", "  ")
-	json_file := fileExtReplace(filename, "json")
+	json_file := FileExtReplace(filename, "json")
 	err := os.WriteFile(json_file, json_data, 0666)
 	if err != nil {
 		log.Error("Unable to write json data because of:", err)
@@ -81,38 +81,38 @@ var (
 	aclout_compiled = regexp.MustCompile(ACLOUT_REGEXP)
 )
 
-func fileExtReplace(f string, ex string) string {
+func FileExtReplace(f string, ex string) string {
 	bareName := strings.TrimSuffix(f, filepath.Ext(f))
 	return fmt.Sprintf("%s.%s", bareName, ex)
 }
 
-func main() {
-	var ifile = flag.String("i", "", "input configuration file to parse data from")
-	var ofile = flag.String("o", "", "output csv file, default is input filename with .csv extension")
-	var devtype = flag.String("t", "ios", "cisco OS family, possible values are ios, nxos. Default is ios")
-	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
+// func main() {
+// 	var ifile = flag.String("i", "", "input configuration file to parse data from")
+// 	var ofile = flag.String("o", "", "output csv file, default is input filename with .csv extension")
+// 	var devtype = flag.String("t", "ios", "cisco OS family, possible values are ios, nxos. Default is ios")
+// 	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
 
-	flag.Parse()
-	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s, JSON output: %v", *ifile, *ofile, *devtype, *jsonOut)
+// 	flag.Parse()
+// 	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s, JSON output: %v", *ifile, *ofile, *devtype, *jsonOut)
 
-	f, err := os.Open(*ifile)
-	if err != nil {
-		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
-	}
-	defer f.Close()
+// 	f, err := os.Open(*ifile)
+// 	if err != nil {
+// 		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
+// 	}
+// 	defer f.Close()
 
-	interface_map := parsing(f, *devtype)	
+// 	interface_map := Parsing(f, *devtype)	
 
-	if *ofile == "" {
-		*ofile = fileExtReplace(*ifile, "csv")
-	}
+// 	if *ofile == "" {
+// 		*ofile = fileExtReplace(*ifile, "csv")
+// 	}
 
-	ToCSV(interface_map, *ofile)
+// 	ToCSV(interface_map, *ofile)
 
-	if *jsonOut {						// Optional step to store json data needed in testing
-		interface_map.ToJSON(*ifile)
-	}
-}
+// 	if *jsonOut {						// Optional step to store json data needed in testing
+// 		interface_map.ToJSON(*ifile)
+// 	}
+// }
 
 func getIP(s string, d string) (ip_addr, subnet string) {
 	
@@ -142,7 +142,7 @@ func getIP(s string, d string) (ip_addr, subnet string) {
 	return
 }
 
-func parsing(f *os.File, d string) CiscoInterfaceMap {
+func Parsing(f *os.File, d string) CiscoInterfaceMap {
 
 	interfaces := CiscoInterfaceMap{}
 	var intf_name string

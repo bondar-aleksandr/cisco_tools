@@ -1,4 +1,4 @@
-module ios-config-parsing
+module github.com/bondar-aleksandr/ios-config-parsing
 
 go 1.20
 

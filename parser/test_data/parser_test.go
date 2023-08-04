@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"encoding/json"
@@ -29,10 +29,10 @@ func Test_parsing(t *testing.T) {
 	ios_ifile_routerXR := "ASR-P.txt"
 	nxos_ifile := "dc0-n9k-d_23.08.txt"
 
-	ios_map_router := getCiscoInterfaceMap(fileExtReplace(ios_ifile_router, "json"))
-	ios_map_switch := getCiscoInterfaceMap(fileExtReplace(ios_ifiile_switch, "json"))
-	ios_map_routerXR := getCiscoInterfaceMap(fileExtReplace(ios_ifile_routerXR, "json"))
-	nxos_map := getCiscoInterfaceMap(fileExtReplace(nxos_ifile, "json"))
+	ios_map_router := getCiscoInterfaceMap(FileExtReplace(ios_ifile_router, "json"))
+	ios_map_switch := getCiscoInterfaceMap(FileExtReplace(ios_ifiile_switch, "json"))
+	ios_map_routerXR := getCiscoInterfaceMap(FileExtReplace(ios_ifile_routerXR, "json"))
+	nxos_map := getCiscoInterfaceMap(FileExtReplace(nxos_ifile, "json"))
 
 
 	configs := []struct{
@@ -57,7 +57,7 @@ func Test_parsing(t *testing.T) {
 			t.Errorf("Cannot open configuration file %s because of %q", ifile, err)
 		}
 
-		interface_map := parsing(f, device)
+		interface_map := Parsing(f, device)
 		eq := reflect.DeepEqual(interface_map, target_map)
 		if !eq {
 			t.Errorf("%s: parsed config doesn't correspond target value", v.name)
