@@ -1,0 +1,26 @@
+{{define "title"}}IOS config-parser{{end}}
+{{define "main"}}
+    <p>
+        This app parses text configuration IOS/NXOS file, and converts it to csv/json format
+    </p>
+    <div>
+        <label>cisco device type: </label>
+        <input type='radio' name='inputFormat' value='ios'> ios
+        <input type='radio' name='inputFormat' value='nxos'> nxos
+    </div>
+    <div>
+        <form
+            enctype="multipart/form-data"
+            action="./config-parser/upload"
+            method="post"
+            >
+            <input type="file" name="myFile" />
+            <input type="submit" value="upload" />
+        </form>
+    </div>
+    <div>
+        <label>Output result format:</label>
+        <input type='radio' name='outputFormat' value='csv'> csv
+        <input type='radio' name='outputFormat' value='json'> json
+    </div>
+{{end}}

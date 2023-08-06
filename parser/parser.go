@@ -85,34 +85,6 @@ func FileExtReplace(f string, ex string) string {
 	return fmt.Sprintf("%s.%s", bareName, ex)
 }
 
-// func main() {
-// 	var ifile = flag.String("i", "", "input configuration file to parse data from")
-// 	var ofile = flag.String("o", "", "output csv file, default is input filename with .csv extension")
-// 	var devtype = flag.String("t", "ios", "cisco OS family, possible values are ios, nxos. Default is ios")
-// 	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
-
-// 	flag.Parse()
-// 	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s, JSON output: %v", *ifile, *ofile, *devtype, *jsonOut)
-
-// 	f, err := os.Open(*ifile)
-// 	if err != nil {
-// 		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
-// 	}
-// 	defer f.Close()
-
-// 	interface_map := Parsing(f, *devtype)	
-
-// 	if *ofile == "" {
-// 		*ofile = fileExtReplace(*ifile, "csv")
-// 	}
-
-// 	ToCSV(interface_map, *ofile)
-
-// 	if *jsonOut {						// Optional step to store json data needed in testing
-// 		interface_map.ToJSON(*ifile)
-// 	}
-// }
-
 func getIP(s string, d string) (ip_addr, subnet string) {
 	
 	if strings.Contains(s, "dhcp") {
