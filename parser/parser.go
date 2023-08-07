@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
+	// "os"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"path/filepath"
 	log "github.com/sirupsen/logrus"
+	"io"
 )
 
 type CiscoInterface struct {
@@ -50,27 +51,26 @@ func (c CiscoInterfaceMap) GetFields() []string {
 	return result
 }
 
-func (c CiscoInterfaceMap) ToJSON(f *os.File) {		// For testing purpose, to get structured data to deserialize from
+func (c CiscoInterfaceMap) ToJSON(w io.Writer) {		// For testing purpose, to get structured data to deserialize from
 	json_data, _ := json.MarshalIndent(c, "", "  ")
-	json_file := FileExtReplace(f.Name(), "json")
-	err := os.WriteFile(json_file, json_data, 0666)
+	_, err := w.Write(json_data)
 	if err != nil {
 		log.Error("Unable to write json data because of:", err)
 	}
-	log.Infof("Saved json data to %s file", json_file)
+	log.Infof("Writing JSON data done")
 }
 
-func (c CiscoInterfaceMap) ToCSV(f *os.File) {
-	w := csv.NewWriter(f)
+func (c CiscoInterfaceMap) ToCSV(w io.Writer) {
+	cw := csv.NewWriter(w)
 	headers := c.GetFields()
-	w.Write(headers)
+	cw.Write(headers)
 
 	for _,v := range c.GetSortedKeys() {
 		line := c[v].ToSlice()
-		w.Write(line)
+		cw.Write(line)
 	}
-	w.Flush()
-	log.Infof("Writing CSV to %s done", f.Name())
+	cw.Flush()
+	log.Info("Writing CSV data done")
 }
 
 const(
@@ -126,7 +126,7 @@ func getIP(s string, d string) (ip_addr, subnet string) {
 	return
 }
 
-func Parsing(f *os.File, d string) CiscoInterfaceMap {
+func Parsing(r io.Reader, d string) CiscoInterfaceMap {
 
 	interfaces := CiscoInterfaceMap{}
 	var intf_name string
@@ -139,7 +139,7 @@ func Parsing(f *os.File, d string) CiscoInterfaceMap {
 		line_ident = "  "
 	}
 
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 
 		line := strings.TrimRight(scanner.Text(), " ")
