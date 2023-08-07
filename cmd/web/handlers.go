@@ -1,11 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	log "github.com/sirupsen/logrus"
-	"os"
+	// "fmt"
 	"io/ioutil"
+	"net/http"
+	"os"
+	// "strings"
+
+	"github.com/bondar-aleksandr/ios-config-parsing/parser"
+	log "github.com/sirupsen/logrus"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -22,8 +25,6 @@ func (app *application) configParser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "config upload")
-
 	// Maximum upload of 10 MB files
 	r.ParseMultipartForm(10 << 20)
 
@@ -44,13 +45,17 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	fmt.Println(tempFile.Name())
-	defer os.Remove(tempFile.Name()) // clean up
+	
+	// clean up
+	defer func() {
+        err := os.Remove(tempFile.Name())
+        if err != nil {
+			log.Error(err)
+            app.serverError(w, err)
+        }
+    }()
 
-	// defer tempFile.Close()
-
-    // read all of the contents of our uploaded file into a
-    // byte array
+    // read all of the contents of our uploaded file into a byte array
     fileBytes, err := ioutil.ReadAll(file)
     if err != nil {
         app.serverError(w, err)
@@ -58,7 +63,24 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
     }
     // write this byte array to our temporary file
     tempFile.Write(fileBytes)
-	
+
+	//TODO: processing part
+
+	osFamily := r.FormValue("osFamily")
+	outputFormat := r.FormValue("outputFormat")
+	log.Infof("Selected the following: OS family - %s, Outputformat - %s", osFamily, outputFormat)
+
+	interface_map := parser.Parsing(tempFile, osFamily)
+	if outputFormat == "csv" {
+		parser.ToCSV(interface_map, "./csv-output.csv")
+	} else if outputFormat == "json" {
+		interface_map.ToJSON("./json-output.json")
+	}
+
+	//end of processing
+	tempFile.Close()
+
     // return that we have successfully uploaded our file!
-    fmt.Fprint(w, "Successfully Uploaded File\n")
+	data := &templateData{}
+	app.render(w, http.StatusAccepted, "config-upload.tmpl", data)
 }
