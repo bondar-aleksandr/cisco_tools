@@ -203,12 +203,8 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 	return interfaces
 }
 
-func ToCSV(intf_map CiscoInterfaceMap, filename string) {
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatalf("Error in writing csv data to file %s because of: %q", f.Name(), err)
-	}
-	defer f.Close()
+func ToCSV(intf_map CiscoInterfaceMap, f *os.File) {
+	
 	w := csv.NewWriter(f)
 	headers := intf_map.GetFields()
 	w.Write(headers)
@@ -218,5 +214,5 @@ func ToCSV(intf_map CiscoInterfaceMap, filename string) {
 		w.Write(line)
 	}
 	w.Flush()
-	log.Infof("Writing CSV to %s done", filename)
+	log.Infof("Writing CSV to %s done", f.Name())
 }
