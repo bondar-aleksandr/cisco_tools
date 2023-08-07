@@ -50,14 +50,27 @@ func (c CiscoInterfaceMap) GetFields() []string {
 	return result
 }
 
-func (c CiscoInterfaceMap) ToJSON(filename string) {		// For testing purpose, to get structured data to deserialize from
+func (c CiscoInterfaceMap) ToJSON(f *os.File) {		// For testing purpose, to get structured data to deserialize from
 	json_data, _ := json.MarshalIndent(c, "", "  ")
-	json_file := FileExtReplace(filename, "json")
+	json_file := FileExtReplace(f.Name(), "json")
 	err := os.WriteFile(json_file, json_data, 0666)
 	if err != nil {
 		log.Error("Unable to write json data because of:", err)
 	}
 	log.Infof("Saved json data to %s file", json_file)
+}
+
+func (c CiscoInterfaceMap) ToCSV(f *os.File) {
+	w := csv.NewWriter(f)
+	headers := c.GetFields()
+	w.Write(headers)
+
+	for _,v := range c.GetSortedKeys() {
+		line := c[v].ToSlice()
+		w.Write(line)
+	}
+	w.Flush()
+	log.Infof("Writing CSV to %s done", f.Name())
 }
 
 const(
@@ -174,20 +187,3 @@ func Parsing(f *os.File, d string) CiscoInterfaceMap {
 	return interfaces
 }
 
-func ToCSV(intf_map CiscoInterfaceMap, filename string) {
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatalf("Error in writing csv data to file %s because of: %q", f.Name(), err)
-	}
-	defer f.Close()
-	w := csv.NewWriter(f)
-	headers := intf_map.GetFields()
-	w.Write(headers)
-
-	for _,v := range intf_map.GetSortedKeys() {
-		line := intf_map[v].ToSlice()
-		w.Write(line)
-	}
-	w.Flush()
-	log.Infof("Writing CSV to %s done", filename)
-}
