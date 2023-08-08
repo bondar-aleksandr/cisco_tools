@@ -1,19 +1,19 @@
-package main
+package parser
 
 import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net"
-	"os"
+	// "os"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"path/filepath"
 	log "github.com/sirupsen/logrus"
+	"io"
 )
 
 type CiscoInterface struct {
@@ -51,14 +51,26 @@ func (c CiscoInterfaceMap) GetFields() []string {
 	return result
 }
 
-func (c CiscoInterfaceMap) ToJSON(filename string) {		// For testing purpose, to get structured data to deserialize from
+func (c CiscoInterfaceMap) ToJSON(w io.Writer) {		// For testing purpose, to get structured data to deserialize from
 	json_data, _ := json.MarshalIndent(c, "", "  ")
-	json_file := fileExtReplace(filename, "json")
-	err := os.WriteFile(json_file, json_data, 0666)
+	_, err := w.Write(json_data)
 	if err != nil {
 		log.Error("Unable to write json data because of:", err)
 	}
-	log.Infof("Saved json data to %s file", json_file)
+	log.Infof("Writing JSON data done")
+}
+
+func (c CiscoInterfaceMap) ToCSV(w io.Writer) {
+	cw := csv.NewWriter(w)
+	headers := c.GetFields()
+	cw.Write(headers)
+
+	for _,v := range c.GetSortedKeys() {
+		line := c[v].ToSlice()
+		cw.Write(line)
+	}
+	cw.Flush()
+	log.Info("Writing CSV data done")
 }
 
 const(
@@ -81,37 +93,9 @@ var (
 	aclout_compiled = regexp.MustCompile(ACLOUT_REGEXP)
 )
 
-func fileExtReplace(f string, ex string) string {
+func FileExtReplace(f string, ex string) string {
 	bareName := strings.TrimSuffix(f, filepath.Ext(f))
 	return fmt.Sprintf("%s.%s", bareName, ex)
-}
-
-func main() {
-	var ifile = flag.String("i", "", "input configuration file to parse data from")
-	var ofile = flag.String("o", "", "output csv file, default is input filename with .csv extension")
-	var devtype = flag.String("t", "ios", "cisco OS family, possible values are ios, nxos. Default is ios")
-	var jsonOut = flag.Bool("j", false, "Whether JSON file needed. Default is false")
-
-	flag.Parse()
-	log.Infof("Program started, got the following parameters: input file: %s, output file: %s, device type: %s, JSON output: %v", *ifile, *ofile, *devtype, *jsonOut)
-
-	f, err := os.Open(*ifile)
-	if err != nil {
-		log.Fatalf("Can not open file %s because of: %q", *ifile, err)
-	}
-	defer f.Close()
-
-	interface_map := parsing(f, *devtype)	
-
-	if *ofile == "" {
-		*ofile = fileExtReplace(*ifile, "csv")
-	}
-
-	ToCSV(interface_map, *ofile)
-
-	if *jsonOut {						// Optional step to store json data needed in testing
-		interface_map.ToJSON(*ifile)
-	}
 }
 
 func getIP(s string, d string) (ip_addr, subnet string) {
@@ -142,7 +126,7 @@ func getIP(s string, d string) (ip_addr, subnet string) {
 	return
 }
 
-func parsing(f *os.File, d string) CiscoInterfaceMap {
+func Parsing(r io.Reader, d string) CiscoInterfaceMap {
 
 	interfaces := CiscoInterfaceMap{}
 	var intf_name string
@@ -155,7 +139,7 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 		line_ident = "  "
 	}
 
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 
 		line := strings.TrimRight(scanner.Text(), " ")
@@ -203,16 +187,3 @@ func parsing(f *os.File, d string) CiscoInterfaceMap {
 	return interfaces
 }
 
-func ToCSV(intf_map CiscoInterfaceMap, f *os.File) {
-	
-	w := csv.NewWriter(f)
-	headers := intf_map.GetFields()
-	w.Write(headers)
-
-	for _,v := range intf_map.GetSortedKeys() {
-		line := intf_map[v].ToSlice()
-		w.Write(line)
-	}
-	w.Flush()
-	log.Infof("Writing CSV to %s done", f.Name())
-}

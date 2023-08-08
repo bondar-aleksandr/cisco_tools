@@ -19,7 +19,7 @@ func main() {
 
 	iFile, err := os.Open(*iFileName)
 	if err != nil {
-		log.Fatalf("Can not open file %s because of: %q", *iFileName, err)
+		log.Fatalf("Can not open file %s because of: %q", iFile.Name(), err)
 	}
 	defer iFile.Close()
 
@@ -31,12 +31,20 @@ func main() {
 
 	oFile, err := os.Create(*oFileName)
 	if err != nil {
-		log.Fatalf("Error in writing csv data to file %s because of: %q", *oFileName, err)
+		log.Fatalf("Error in writing csv data to file %s because of: %q", oFile.Name(), err)
 	}
 	defer oFile.Close()
-	parser.ToCSV(interface_map, oFile)
+	interface_map.ToCSV(oFile)
+	log.Infof("Saved to %s", oFile.Name())
 
-	// if *jsonOut {						// Optional step to store json data needed in testing
-	// 	interface_map.ToJSON(*ifile)
-	// }
+	if *jsonOut {		
+		jsonFileName := parser.FileExtReplace(*oFileName, "json")
+		jsonFile, err := os.Create(jsonFileName)
+		if err != nil {
+			log.Fatalf("Error in writing json data to file %s because of: %q", jsonFile.Name(), err)
+		}
+		defer jsonFile.Close()
+		interface_map.ToJSON(jsonFile)
+		log.Infof("Saved to %s", jsonFileName)
+	}
 }
