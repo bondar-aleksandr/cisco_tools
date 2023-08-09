@@ -17,17 +17,26 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) configParser(w http.ResponseWriter, r *http.Request) {
-	data := &templateData{}
+	data := &templateData{
+		MaxUploadSize: appConfig.Server.MaxUpload,
+	}
 	app.render(w, http.StatusOK, "config-parser.tmpl", data)
 }
 
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
-	// Maximum upload of 10 MB files
-	r.ParseMultipartForm(10 << 20)
+	// limit upload file size
+	r.Body = http.MaxBytesReader(w, r.Body, app.config.Server.MaxUpload)
+	err := r.ParseMultipartForm(app.config.Server.MaxUpload)
+	
+	if err != nil {
+		log.Errorf("Error parsing multipart form: %s", err)
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
 	file, fileHeader, err := r.FormFile("configFile")
     if err != nil {
-        log.Errorf("Error Retrieving the File: %s", err)
+        log.Errorf("Error retrieving the File: %s", err)
 		app.clientError(w, http.StatusBadRequest)
         return
     }
