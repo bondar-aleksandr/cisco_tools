@@ -13,6 +13,7 @@ type templateData struct {
 	// Flash string
 	// IsAuthenticated bool
 	// CSRFToken string
+	MaxUploadSize int64
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
