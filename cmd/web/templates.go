@@ -14,6 +14,7 @@ type templateData struct {
 	// IsAuthenticated bool
 	// CSRFToken string
 	MaxUploadSize int64
+	Message string
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

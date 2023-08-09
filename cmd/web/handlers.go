@@ -20,7 +20,7 @@ func (app *application) configParser(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{
 		MaxUploadSize: appConfig.Server.MaxUpload,
 	}
-	app.render(w, http.StatusOK, "config-parser.tmpl", data)
+	app.render(w, http.StatusOK, "configParserHome.tmpl", data)
 }
 
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
@@ -41,9 +41,9 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
         return
     }
     defer file.Close()
-	log.Infof("Uploaded File: %+v\n", fileHeader.Filename)
-	log.Infof("File Size: %+v\n", fileHeader.Size)
-	log.Infof("MIME Header: %+v\n", fileHeader.Header.Values("Content-Type"))
+	log.Infof("Uploaded File: %+v", fileHeader.Filename)
+	log.Infof("File Size: %+v", fileHeader.Size)
+	log.Infof("MIME Header: %+v", fileHeader.Header.Values("Content-Type"))
 
     fileBytes, err := io.ReadAll(file)
     if err != nil {
@@ -59,7 +59,14 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.Write(fileBytes)
 
-	interface_map := parser.Parsing(buf, osFamily)
+	interface_map, err := parser.Parsing(buf, osFamily)
+	if err != nil {
+		data := &templateData{
+			Message: "It's not config file, or there is no interfaces in it. Parsing failed.",
+		}
+		app.render(w, http.StatusUnprocessableEntity, "configParserAction.tmpl", data)
+		return
+	}
 
 	tempFile, err := os.CreateTemp("./temp", fmt.Sprintf("output-*.%s", outputFormat))
 	if err != nil {
