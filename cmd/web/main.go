@@ -13,12 +13,12 @@ import (
 
 type config struct {
 	Server struct {
-		Host string
-		Port string
-		ReadTimeout int
-		WriteTimeout int
-		IdleTimeout int
-		maxUpload int
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
+		ReadTimeout int64 `yaml:"readTimeout"`
+		WriteTimeout int64 `yaml:"writeTimeout"`
+		IdleTimeout int64 `yaml:"idleTimeout"`
+		MaxUpload int64 `yaml:"maxUpload"`
 	}
 }
 
@@ -54,10 +54,18 @@ func main() {
 		IdleTimeout: time.Duration(app.config.Server.IdleTimeout) * time.Second,
 		ReadTimeout: time.Duration(app.config.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(app.config.Server.WriteTimeout) * time.Second,
+		
 	}
 
-	log.Infof("starting server on port %s...\n", app.config.Server.Port)
-
+	log.Infof(`
+	"starting server with following parameters:
+	address - %s
+	idleTimeout - %d
+	readTimeout - %d
+	writeTimeout - %d
+	maxUpload - %d"`, srv.Addr, srv.IdleTimeout,
+	srv.ReadTimeout, srv.WriteTimeout, app.config.Server.MaxUpload)
+	
 	err = srv.ListenAndServe()
 	log.Fatal(err)
 }
