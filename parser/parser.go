@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	// "os"
 	"reflect"
 	"regexp"
 	"sort"
@@ -14,6 +13,7 @@ import (
 	"path/filepath"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"errors"
 )
 
 type CiscoInterface struct {
@@ -126,7 +126,7 @@ func getIP(s string, d string) (ip_addr, subnet string) {
 	return
 }
 
-func Parsing(r io.Reader, d string) CiscoInterfaceMap {
+func Parsing(r io.Reader, d string) (CiscoInterfaceMap, error) {
 
 	interfaces := CiscoInterfaceMap{}
 	var intf_name string
@@ -183,7 +183,12 @@ func Parsing(r io.Reader, d string) CiscoInterfaceMap {
 			break
 		}
 	}
+	if len(interfaces) == 0 {
+		err := errors.New("Parsing failed")
+		log.Error("Parsing got 0 interfaces!")
+		return interfaces, err
+	}
 	log.Infof("parsing finished, got %v interfaces", len(interfaces))
-	return interfaces
+	return interfaces, nil
 }
 

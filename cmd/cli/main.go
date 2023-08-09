@@ -23,7 +23,10 @@ func main() {
 	}
 	defer iFile.Close()
 
-	interface_map := parser.Parsing(iFile, *devtype)	
+	interface_map, err := parser.Parsing(iFile, *devtype)
+	if err != nil {
+		log.Fatal(err)
+	}	
 
 	if *oFileName == "" {
 		*oFileName = parser.FileExtReplace(*iFileName, "csv")

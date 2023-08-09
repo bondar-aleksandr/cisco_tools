@@ -57,7 +57,7 @@ func Test_parsing(t *testing.T) {
 			t.Errorf("Cannot open configuration file %s because of %q", ifile, err)
 		}
 
-		interface_map := Parsing(f, device)
+		interface_map, _ := Parsing(f, device)
 		eq := reflect.DeepEqual(interface_map, target_map)
 		if !eq {
 			t.Errorf("%s: parsed config doesn't correspond target value", v.name)
