@@ -15,7 +15,7 @@ func (app *application) routes() http.Handler {
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
 	router.Handler(http.MethodGet, "/", standard.ThenFunc(app.home))
-	router.Handler(http.MethodGet, "/config-parser", standard.ThenFunc(app.configParser))
+	router.Handler(http.MethodGet, "/config-parser", standard.ThenFunc(app.configParserHome))
     router.Handler(http.MethodPost, "/config-parser/upload", standard.ThenFunc(app.configUpload))
 
 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

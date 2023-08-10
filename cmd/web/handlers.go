@@ -16,7 +16,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.tmpl", data)
 }
 
-func (app *application) configParser(w http.ResponseWriter, r *http.Request) {
+func (app *application) configParserHome(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{
 		MaxUploadSize: appConfig.Server.MaxUpload,
 	}
@@ -92,10 +92,8 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
     }()
 
 	//response to client
+	
 	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(tempFile.Name()))
 	w.Header().Set("Content-Type", "application/octet-stream")
 	http.ServeFile(w, r, tempFile.Name())
-
-	// data := &templateData{}
-	// app.render(w, http.StatusAccepted, "config-upload.tmpl", data)
 }
