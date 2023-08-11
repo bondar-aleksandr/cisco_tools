@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"github.com/bondar-aleksandr/ios-config-parsing/parser"
 	log "github.com/sirupsen/logrus"
+	"github.com/justinas/nosurf"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +20,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 func (app *application) configParserHome(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{
 		MaxUploadSize: appConfig.Server.MaxUpload,
+		CSRFToken: nosurf.Token(r),
 	}
 	app.render(w, http.StatusOK, "configParserHome.tmpl", data)
 }

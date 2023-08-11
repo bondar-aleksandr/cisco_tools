@@ -12,6 +12,7 @@
             action="./config-parser/upload"
             method="post"
             >
+            <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
             <div>
                 <label>cisco device type: </label>
                 <input type='radio' name='osFamily' checked=true value='ios'> ios

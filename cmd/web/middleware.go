@@ -4,7 +4,19 @@ import (
 	"net/http"
 	log "github.com/sirupsen/logrus"
 	"fmt"
+    "github.com/justinas/nosurf"
 )
+
+func noSurf(next http.Handler) http.Handler {
+    csrfHandler := nosurf.New(next)
+    csrfHandler.SetBaseCookie(http.Cookie{
+        HttpOnly: true,
+        Path:     "/",
+        Secure:   false,
+    })
+
+    return csrfHandler
+}
 
 
 func secureHeaders(next http.Handler) http.Handler {

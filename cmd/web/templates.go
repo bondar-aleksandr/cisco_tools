@@ -12,7 +12,7 @@ type templateData struct {
 	// Form any
 	// Flash string
 	// IsAuthenticated bool
-	// CSRFToken string
+	CSRFToken string
 	MaxUploadSize int64
 	Message string
 }
