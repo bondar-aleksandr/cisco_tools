@@ -6,15 +6,10 @@ import (
 )
 
 type templateData struct {
-	// CurrentYear int
-	// Snippet *models.Snippet
-	// Snippets []*models.Snippet
-	// Form any
-	// Flash string
-	// IsAuthenticated bool
 	CSRFToken string
 	MaxUploadSize int64
 	Message string
+	ParsingStatus bool
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

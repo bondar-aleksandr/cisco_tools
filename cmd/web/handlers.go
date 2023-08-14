@@ -25,8 +25,12 @@ func (app *application) configParserHome(w http.ResponseWriter, r *http.Request)
 	app.render(w, http.StatusOK, "configParserHome.tmpl", data)
 }
 
+// configUpload func parses http request, gets values from hmtl form, and calls "parser.Parsing" func.
+// After parsing is done, it puts the result into ./temp/ directory and shows result download page to user.
+// Result filename transered to "configDownload" handler as session key
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
-	// limit upload file size
+	
+	// Parsing request, limit upload file size
 	r.Body = http.MaxBytesReader(w, r.Body, app.config.Server.MaxUpload)
 	err := r.ParseMultipartForm(app.config.Server.MaxUpload)
 	
@@ -66,7 +70,7 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 		data := &templateData{
 			Message: "It's not config file, or there is no interfaces in it. Parsing failed.",
 		}
-		app.render(w, http.StatusUnprocessableEntity, "configParserAction.tmpl", data)
+		app.render(w, http.StatusUnprocessableEntity, "configParserResult.tmpl", data)
 		return
 	}
 
@@ -85,17 +89,39 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Saved as %s", tempFile.Name())
 	tempFile.Close()
 
+	//response to client
+	app.sessionManager.Put(r.Context(), "downloadFile", tempFile.Name())
+	data := &templateData{
+		Message: "Parsed successfully. Download link below",
+		ParsingStatus: true,
+	}
+	app.render(w, http.StatusOK, "configParserResult.tmpl", data)
+}
+
+// configDownload func gets result filename from session, and serve this file to user as attachment.
+// Afterwards, result file is deleted from "./temp" directory
+func (app *application) configDownload(w http.ResponseWriter, r *http.Request) {
+
+	downloadFile := app.sessionManager.PopString(r.Context(), "downloadFile")
+	// for cases when path is accessed directly
+	if downloadFile == "" {
+		data := &templateData{
+			Message: "You need to upload configFile first!",
+		}
+		app.render(w, http.StatusBadRequest, "configParserResult.tmpl", data)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(downloadFile))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	http.ServeFile(w, r, downloadFile)
+
 	// clean up
 	defer func() {
-		err = os.Remove(tempFile.Name())
+		err := os.Remove(downloadFile)
 		if err != nil {
 			log.Error(err)
         }
+		log.Infof("%s file deleted", downloadFile)
     }()
-
-	//response to client
-	
-	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(tempFile.Name()))
-	w.Header().Set("Content-Type", "application/octet-stream")
-	http.ServeFile(w, r, tempFile.Name())
 }

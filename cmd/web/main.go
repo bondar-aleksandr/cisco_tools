@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	"github.com/alexedwards/scs/v2"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -23,13 +23,8 @@ type config struct {
 }
 
 type application struct {
-	// infoLog *log.Logger
-	// errorLog *log.Logger
-	// snippets *models.SnippetModel
-	// users *models.UserModel
 	templateCache map[string]*template.Template
-	// formDecoder *form.Decoder
-	// sessionManager *scs.SessionManager
+	sessionManager *scs.SessionManager
 	config config
 }
 
@@ -43,9 +38,13 @@ func main() {
         log.Fatal(err)
     }
 
+	sessionManager := scs.New()
+	sessionManager.Cookie.Persist = false
+
 	app := &application{
 		templateCache: templateCache,
 		config: appConfig,
+		sessionManager: sessionManager,
 	}
 	
 	srv := &http.Server{
@@ -54,7 +53,6 @@ func main() {
 		IdleTimeout: time.Duration(app.config.Server.IdleTimeout) * time.Second,
 		ReadTimeout: time.Duration(app.config.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(app.config.Server.WriteTimeout) * time.Second,
-		
 	}
 
 	log.Infof(`
