@@ -18,11 +18,17 @@ func noSurf(next http.Handler) http.Handler {
     return csrfHandler
 }
 
+// limit request size
+func (app *application) maxRequestSize(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        r.Body = http.MaxBytesReader(w, r.Body, app.config.Server.MaxUpload)
+        
+        next.ServeHTTP(w, r)
+    })
+}
 
 func secureHeaders(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Note: This is split across multiple lines for readability. You don't 
-        // need to do this in your own code.
         w.Header().Set("Content-Security-Policy",
             "default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
 

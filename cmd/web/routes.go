@@ -23,7 +23,7 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
-	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	standard := alice.New(app.maxRequestSize, app.recoverPanic, app.logRequest, secureHeaders)
 	
 	return standard.Then(router)
 }

@@ -29,9 +29,7 @@ func (app *application) configParserHome(w http.ResponseWriter, r *http.Request)
 // After parsing is done, it puts the result into ./temp/ directory and shows result download page to user.
 // Result filename transered to "configDownload" handler as session key
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
-	
-	// Parsing request, limit upload file size
-	r.Body = http.MaxBytesReader(w, r.Body, app.config.Server.MaxUpload)
+	//parsing part
 	err := r.ParseMultipartForm(app.config.Server.MaxUpload)
 	
 	if err != nil {
