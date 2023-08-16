@@ -2,56 +2,57 @@ package main
 
 import (
 	"fmt"
+	"github.com/alexedwards/scs/v2"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"html/template"
 	"net/http"
 	"os"
 	"time"
-	"github.com/alexedwards/scs/v2"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 type config struct {
 	Server struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
-		ReadTimeout int64 `yaml:"readTimeout"`
-		WriteTimeout int64 `yaml:"writeTimeout"`
-		IdleTimeout int64 `yaml:"idleTimeout"`
-		MaxUpload int64 `yaml:"maxUpload"`
+		Host            string   `yaml:"host"`
+		Port            string   `yaml:"port"`
+		ReadTimeout     int64    `yaml:"readTimeout"`
+		WriteTimeout    int64    `yaml:"writeTimeout"`
+		IdleTimeout     int64    `yaml:"idleTimeout"`
+		MaxUpload       int64    `yaml:"maxUpload"`
+		UploadMIMETypes []string `yaml:"uploadMIMETypes"`
 	}
 }
 
 type application struct {
-	templateCache map[string]*template.Template
+	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
-	config config
+	config         config
 }
 
 var appConfig config
 
 func main() {
 	readConfig(&appConfig)
-	
+
 	templateCache, err := newTemplateCache()
 	if err != nil {
-        log.Fatal(err)
-    }
+		log.Fatal(err)
+	}
 
 	sessionManager := scs.New()
 	sessionManager.Cookie.Persist = false
 
 	app := &application{
-		templateCache: templateCache,
-		config: appConfig,
+		templateCache:  templateCache,
+		config:         appConfig,
 		sessionManager: sessionManager,
 	}
-	
+
 	srv := &http.Server{
-		Addr: fmt.Sprintf("%s:%s", app.config.Server.Host, app.config.Server.Port),
-		Handler: app.routes(),
-		IdleTimeout: time.Duration(app.config.Server.IdleTimeout) * time.Second,
-		ReadTimeout: time.Duration(app.config.Server.ReadTimeout) * time.Second,
+		Addr:         fmt.Sprintf("%s:%s", app.config.Server.Host, app.config.Server.Port),
+		Handler:      app.routes(),
+		IdleTimeout:  time.Duration(app.config.Server.IdleTimeout) * time.Second,
+		ReadTimeout:  time.Duration(app.config.Server.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(app.config.Server.WriteTimeout) * time.Second,
 	}
 
@@ -62,8 +63,8 @@ func main() {
 	readTimeout - %d
 	writeTimeout - %d
 	maxUpload - %d"`, srv.Addr, srv.IdleTimeout,
-	srv.ReadTimeout, srv.WriteTimeout, app.config.Server.MaxUpload)
-	
+		srv.ReadTimeout, srv.WriteTimeout, app.config.Server.MaxUpload)
+
 	err = srv.ListenAndServe()
 	log.Fatal(err)
 }

@@ -4,27 +4,27 @@ import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	"io"
 	"net"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
-	"path/filepath"
-	log "github.com/sirupsen/logrus"
-	"io"
-	"errors"
 )
 
 type CiscoInterface struct {
-	Name string
+	Name        string
 	Description string
-	Ip_addr string
-	Subnet string
-	Vrf string
-	Mtu string
-	ACLin string
-	ACLout string
+	Ip_addr     string
+	Subnet      string
+	Vrf         string
+	Mtu         string
+	ACLin       string
+	ACLout      string
 }
 
 func (c CiscoInterface) ToSlice() []string {
@@ -34,9 +34,9 @@ func (c CiscoInterface) ToSlice() []string {
 type CiscoInterfaceMap map[string]*CiscoInterface
 
 func (c CiscoInterfaceMap) GetSortedKeys() []string {
-	keys := make([]string,0)
+	keys := make([]string, 0)
 	for k := range c {
-		keys = append(keys,k)
+		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	return keys
@@ -45,13 +45,13 @@ func (c CiscoInterfaceMap) GetSortedKeys() []string {
 func (c CiscoInterfaceMap) GetFields() []string {
 	fields := reflect.VisibleFields(reflect.TypeOf(CiscoInterface{}))
 	result := []string{}
-	for _,v := range(fields) {
+	for _, v := range fields {
 		result = append(result, v.Name)
 	}
 	return result
 }
 
-func (c CiscoInterfaceMap) ToJSON(w io.Writer) {		// For testing purpose, to get structured data to deserialize from
+func (c CiscoInterfaceMap) ToJSON(w io.Writer) { // For testing purpose, to get structured data to deserialize from
 	json_data, _ := json.MarshalIndent(c, "", "  ")
 	_, err := w.Write(json_data)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c CiscoInterfaceMap) ToCSV(w io.Writer) {
 	headers := c.GetFields()
 	cw.Write(headers)
 
-	for _,v := range c.GetSortedKeys() {
+	for _, v := range c.GetSortedKeys() {
 		line := c[v].ToSlice()
 		cw.Write(line)
 	}
@@ -73,23 +73,23 @@ func (c CiscoInterfaceMap) ToCSV(w io.Writer) {
 	log.Info("Writing CSV data done")
 }
 
-const(
-	INTF_REGEXP = `^interface (\S+)`
-	DESC_REGEXP = ` {1,2}description (.*)$`
-	IP_REGEXP = ` {1,2}ip(?:v4)? address (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?: secondary)?`
-	VRF_REGEXP = ` {1,2}vrf(?: forwarding| member)? (\S+)`
-	MTU_REGEXP = ` {1,2}(?:ip )?mtu (\S+)`
-	ACLIN_REGEXP = ` {1,2}access-group (\S+) in`
+const (
+	INTF_REGEXP   = `^interface (\S+)`
+	DESC_REGEXP   = ` {1,2}description (.*)$`
+	IP_REGEXP     = ` {1,2}ip(?:v4)? address (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?: secondary)?`
+	VRF_REGEXP    = ` {1,2}vrf(?: forwarding| member)? (\S+)`
+	MTU_REGEXP    = ` {1,2}(?:ip )?mtu (\S+)`
+	ACLIN_REGEXP  = ` {1,2}access-group (\S+) in`
 	ACLOUT_REGEXP = ` {1,2}access-group (\S+) out`
 )
 
 var (
-	intf_compiled = regexp.MustCompile(INTF_REGEXP)
-	desc_compiled = regexp.MustCompile(DESC_REGEXP)
-	ip_compiled = regexp.MustCompile(IP_REGEXP)
-	vrf_compiled = regexp.MustCompile(VRF_REGEXP)
-	mtu_compiled = regexp.MustCompile(MTU_REGEXP)
-	aclin_compiled = regexp.MustCompile(ACLIN_REGEXP)
+	intf_compiled   = regexp.MustCompile(INTF_REGEXP)
+	desc_compiled   = regexp.MustCompile(DESC_REGEXP)
+	ip_compiled     = regexp.MustCompile(IP_REGEXP)
+	vrf_compiled    = regexp.MustCompile(VRF_REGEXP)
+	mtu_compiled    = regexp.MustCompile(MTU_REGEXP)
+	aclin_compiled  = regexp.MustCompile(ACLIN_REGEXP)
 	aclout_compiled = regexp.MustCompile(ACLOUT_REGEXP)
 )
 
@@ -99,11 +99,11 @@ func FileExtReplace(f string, ex string) string {
 }
 
 func getIP(s string, d string) (ip_addr, subnet string) {
-	
+
 	if strings.Contains(s, "dhcp") {
 		return "dhcp", "dhcp"
 	}
-	
+
 	if d == "ios" {
 
 		ip_str := ip_compiled.FindStringSubmatch(s)[1]
@@ -145,12 +145,12 @@ func Parsing(r io.Reader, d string) (CiscoInterfaceMap, error) {
 		line := strings.TrimRight(scanner.Text(), " ")
 		// fmt.Println(line)	// for debug
 
-		if strings.HasPrefix(line,`interface `) {					//Enter interface configuration block
+		if strings.HasPrefix(line, `interface `) { //Enter interface configuration block
 
 			intf_name = intf_compiled.FindStringSubmatch(line)[1]
 			interfaces[intf_name] = &CiscoInterface{Name: intf_name}
 
-		} else if strings.HasPrefix(line, line_ident) && len(interfaces) > 0 {		//Content inside interface config
+		} else if strings.HasPrefix(line, line_ident) && len(interfaces) > 0 { //Content inside interface config
 
 			switch {
 			case strings.Contains(line, ` description `):
@@ -160,15 +160,15 @@ func Parsing(r io.Reader, d string) (CiscoInterfaceMap, error) {
 			case strings.Contains(line, `ip address `) || strings.Contains(line, `ipv4 address `):
 				ip_cidr, prefix := getIP(scanner.Text(), d)
 				interfaces[intf_name].Ip_addr = ip_cidr
-				interfaces[intf_name].Subnet = prefix	
+				interfaces[intf_name].Subnet = prefix
 
 			case strings.Contains(line, ` vrf `):
 				vrf := vrf_compiled.FindStringSubmatch(line)[1]
 				interfaces[intf_name].Vrf = vrf
-			
+
 			case strings.Contains(line, ` mtu `):
 				mtu := mtu_compiled.FindStringSubmatch(line)[1]
-				interfaces[intf_name].Mtu = mtu	
+				interfaces[intf_name].Mtu = mtu
 
 			case strings.Contains(line, `access-group `) && strings.HasSuffix(line, ` in`):
 				aclin := aclin_compiled.FindStringSubmatch(line)[1]
@@ -179,16 +179,15 @@ func Parsing(r io.Reader, d string) (CiscoInterfaceMap, error) {
 				interfaces[intf_name].ACLout = aclout
 			}
 
-		} else if !(line == line_separator || strings.HasPrefix(line, `interface`)) && len(interfaces) > 0 {	//Exit interface configuration block
+		} else if !(line == line_separator || strings.HasPrefix(line, `interface`)) && len(interfaces) > 0 { //Exit interface configuration block
 			break
 		}
 	}
 	if len(interfaces) == 0 {
 		err := errors.New("Parsing failed")
-		log.Error("Parsing got 0 interfaces!")
+		log.Error("Parsing failed! got 0 interfaces!")
 		return interfaces, err
 	}
 	log.Infof("parsing finished, got %v interfaces", len(interfaces))
 	return interfaces, nil
 }
-

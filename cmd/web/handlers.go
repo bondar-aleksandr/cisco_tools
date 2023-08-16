@@ -3,13 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/bondar-aleksandr/ios-config-parsing/parser"
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/justinas/nosurf"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
-	"github.com/bondar-aleksandr/ios-config-parsing/parser"
-	log "github.com/sirupsen/logrus"
-	"github.com/justinas/nosurf"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -19,8 +20,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) configParserHome(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{
-		MaxUploadSize: appConfig.Server.MaxUpload,
-		CSRFToken: nosurf.Token(r),
+		MaxUploadSize:   appConfig.Server.MaxUpload,
+		CSRFToken:       nosurf.Token(r),
+		UploadMIMETypes: appConfig.Server.UploadMIMETypes,
 	}
 	app.render(w, http.StatusOK, "configParserHome.tmpl", data)
 }
@@ -31,7 +33,7 @@ func (app *application) configParserHome(w http.ResponseWriter, r *http.Request)
 func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	//parsing part
 	err := r.ParseMultipartForm(app.config.Server.MaxUpload)
-	
+
 	if err != nil {
 		log.Errorf("Error parsing multipart form: %s", err)
 		app.clientError(w, http.StatusBadRequest)
@@ -39,22 +41,33 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, fileHeader, err := r.FormFile("configFile")
-    if err != nil {
-        log.Errorf("Error retrieving the File: %s", err)
+	if err != nil {
+		log.Errorf("Error retrieving the File: %s", err)
 		app.clientError(w, http.StatusBadRequest)
-        return
-    }
-    defer file.Close()
+		return
+	}
+	defer file.Close()
 	log.Infof("Uploaded File: %+v", fileHeader.Filename)
 	log.Infof("File Size: %+v", fileHeader.Size)
-	log.Infof("MIME Header: %+v", fileHeader.Header.Values("Content-Type"))
 
-    fileBytes, err := io.ReadAll(file)
-    if err != nil {
-        app.serverError(w, err)
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		app.serverError(w, err)
 		return
-    }
-    
+	}
+	mtype := mimetype.Detect(fileBytes)
+	allowed := appConfig.Server.UploadMIMETypes
+	if !mimetype.EqualsAny(mtype.String(), allowed...) {
+		log.Errorf("Wrong filetype uploaded, got: %s, expect: %s",
+			mtype, appConfig.Server.UploadMIMETypes)
+		data := &templateData{
+			Message: "Only text/plain file types upload is allowed",
+		}
+		app.render(w, http.StatusUnprocessableEntity, "configParserResult.tmpl", data)
+		return
+	}
+	log.Infof("Detected MIME type: %s", mtype)
+
 	//processing part
 	osFamily := r.FormValue("osFamily")
 	outputFormat := r.FormValue("outputFormat")
@@ -90,7 +103,7 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	//response to client
 	app.sessionManager.Put(r.Context(), "downloadFile", tempFile.Name())
 	data := &templateData{
-		Message: "Parsed successfully. Download link below",
+		Message:       "Parsed successfully. Download link below",
 		ParsingStatus: true,
 	}
 	app.render(w, http.StatusOK, "configParserResult.tmpl", data)
@@ -119,7 +132,7 @@ func (app *application) configDownload(w http.ResponseWriter, r *http.Request) {
 		err := os.Remove(downloadFile)
 		if err != nil {
 			log.Error(err)
-        }
+		}
 		log.Infof("%s file deleted", downloadFile)
-    }()
+	}()
 }

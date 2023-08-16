@@ -4,7 +4,13 @@
         This app parses text configuration IOS/NXOS file, and converts it to csv/json format.
     </p>
     <p>
-        MaxUpload size is <strong> {{.MaxUploadSize}} </strong> bytes
+        MaxUpload size is <strong> {{.MaxUploadSize}} </strong> bytes.
+        Allowed upload MIME type are:
+        {{range .UploadMIMETypes}}
+        <ul>
+            <li><strong>{{.}}</strong></li>
+        </ul>
+        {{end}}
     </p>
     <div>
         <form
@@ -20,7 +26,7 @@
             </div>
             <div>
                 <label>config-file:</label>
-                <input type="file" name="configFile" />
+                <input type="file" name="configFile" required/>
                 <input type="submit" value="upload" />
             </div>
             <div>

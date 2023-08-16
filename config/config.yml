@@ -5,3 +5,5 @@ server:
   writeTimeout: 10    # seconds
   idleTimeout: 60     # seconds
   maxUpload: 1        # Mbytes
+  uploadMIMETypes:
+    - "text/plain"
