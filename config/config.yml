@@ -1,7 +1,7 @@
 server:
   host: "localhost"
   port: "4000"
-  readTimeout: 5
-  writeTimeout: 10
-  idleTimeout: 60
-  maxUpload: 1048576
+  readTimeout: 5      # seconds
+  writeTimeout: 10    # seconds
+  idleTimeout: 60     # seconds
+  maxUpload: 1        # Mbytes

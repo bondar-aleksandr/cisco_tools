@@ -80,4 +80,6 @@ func readConfig(cfg *config) {
 	if err != nil {
 		log.Fatalf("Cannot parse app config file because of: %s", err)
 	}
+	//convert Mbytes to bytes
+	cfg.Server.MaxUpload = 1024 * 1024 * cfg.Server.MaxUpload
 }
