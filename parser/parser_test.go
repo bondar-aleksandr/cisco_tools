@@ -2,11 +2,14 @@ package parser
 
 import (
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
-	log "github.com/sirupsen/logrus"
 )
+
+var testDataDir = "./../test_data"
 
 func getCiscoInterfaceMap(filename string) CiscoInterfaceMap {
 	jsonFile, err := os.ReadFile(filename)
@@ -24,20 +27,19 @@ func getCiscoInterfaceMap(filename string) CiscoInterfaceMap {
 
 func Test_parsing(t *testing.T) {
 
-	ios_ifile_router := "./test_data/INET-R01.txt"
-	ios_ifiile_switch := "./test_data/run.txt"
-	ios_ifile_routerXR := "./test_data/ASR-P.txt"
-	nxos_ifile := "./test_data/dc0-n9k-d_23.08.txt"
+	ios_ifile_router := filepath.Join(testDataDir, "INET-R01.txt")
+	ios_ifiile_switch := filepath.Join(testDataDir, "run.txt")
+	ios_ifile_routerXR := filepath.Join(testDataDir, "ASR-P.txt")
+	nxos_ifile := filepath.Join(testDataDir, "dc0-n9k-d_23.08.txt")
 
 	ios_map_router := getCiscoInterfaceMap(FileExtReplace(ios_ifile_router, "json"))
 	ios_map_switch := getCiscoInterfaceMap(FileExtReplace(ios_ifiile_switch, "json"))
 	ios_map_routerXR := getCiscoInterfaceMap(FileExtReplace(ios_ifile_routerXR, "json"))
 	nxos_map := getCiscoInterfaceMap(FileExtReplace(nxos_ifile, "json"))
 
-
-	configs := []struct{
-		name string
-		ifile string
+	configs := []struct {
+		name     string
+		ifile    string
 		dev_type string
 		expected CiscoInterfaceMap
 	}{
@@ -47,7 +49,7 @@ func Test_parsing(t *testing.T) {
 		{name: "NXOS", ifile: nxos_ifile, dev_type: "nxos", expected: nxos_map},
 	}
 
-	for _,v := range configs {
+	for _, v := range configs {
 
 		ifile := v.ifile
 		device := v.dev_type
@@ -62,5 +64,5 @@ func Test_parsing(t *testing.T) {
 		if !eq {
 			t.Errorf("%s: parsed config doesn't correspond target value", v.name)
 		}
-	}		
+	}
 }

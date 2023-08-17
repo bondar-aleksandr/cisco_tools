@@ -2,5 +2,6 @@
 *.csv
 *.exe
 *.json
+*.cfg
 go.sum
 .idea
