@@ -63,7 +63,7 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("Wrong filetype uploaded, got: %s, expect: %s",
 			mtype, appConfig.Server.UploadMIMETypes)
 		data := &templateData{
-			Message: "Only text/plain file types upload is allowed",
+			Message: fmt.Sprintf("Only %s file types upload is allowed", app.config.Server.UploadMIMETypes),
 		}
 		app.render(w, http.StatusUnprocessableEntity, "configParserResult.tmpl", data)
 		return
