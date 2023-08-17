@@ -13,6 +13,8 @@ import (
 	"strconv"
 )
 
+var tempDir = "./temp"
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{}
 	app.render(w, http.StatusOK, "home.tmpl", data)
@@ -85,7 +87,7 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tempFile, err := os.CreateTemp("./temp", fmt.Sprintf("output-*.%s", outputFormat))
+	tempFile, err := os.CreateTemp(tempDir, fmt.Sprintf("output-*.%s", outputFormat))
 	if err != nil {
 		log.Error(err)
 		app.serverError(w, err)

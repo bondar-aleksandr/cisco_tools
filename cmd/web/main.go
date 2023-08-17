@@ -26,9 +26,10 @@ type config struct {
 type application struct {
 	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
-	config         config
+	config         *config
 }
 
+var configPath = "./config/config.yml"
 var appConfig config
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
 
 	app := &application{
 		templateCache:  templateCache,
-		config:         appConfig,
+		config:         &appConfig,
 		sessionManager: sessionManager,
 	}
 
@@ -70,7 +71,8 @@ func main() {
 }
 
 func readConfig(cfg *config) {
-	f, err := os.Open("./config/config.yml")
+
+	f, err := os.Open(configPath)
 	if err != nil {
 		log.Fatalf("Cannot read app config file because of: %s", err)
 	}
