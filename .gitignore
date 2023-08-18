@@ -3,5 +3,6 @@
 *.exe
 *.json
 *.cfg
+*.pdf
 go.sum
 .idea
