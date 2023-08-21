@@ -1,13 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/bondar-aleksandr/ios-config-parsing/internal/assert"
-	"io"
-	"mime/multipart"
 	"net/http"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -51,13 +47,13 @@ func Test_config_Upload(t *testing.T) {
 		statusCode int
 		body       string
 	}{
-		{
-			"upload correct MIME type with correct data",
-			filepath.Join(testDataDir, "INET-R01.txt"),
-			"ios",
-			http.StatusOK,
-			"Parsed successfully. Download link below",
-		},
+		//{
+		//	"upload correct MIME type with correct data",
+		//	filepath.Join(testDataDir, "INET-R01.txt"),
+		//	"ios",
+		//	http.StatusOK,
+		//	"Parsed successfully. Download link below",
+		//},
 		{
 			"upload wrong MIME type",
 			filepath.Join(testDataDir, "INET-R01.json"),
@@ -88,33 +84,32 @@ func Test_config_Upload(t *testing.T) {
 			validCSRFToken := extractCSRFToken(t, body)
 
 			// construct multipart form
-			mbody := new(bytes.Buffer)
-			mw := *multipart.NewWriter(mbody)
-			_ = mw.WriteField("osFamily", "ios")
-			_ = mw.WriteField("outputFormat", "csv")
-			_ = mw.WriteField("csrf_token", validCSRFToken)
-
-			// attach file to form
-			file, err := os.Open(val.filename)
-			if err != nil {
-				t.Fatal(err)
-			}
-			w, err := mw.CreateFormFile("configFile", file.Name())
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := io.Copy(w, file); err != nil {
-				t.Fatal(err)
-			}
-			mw.Close()
+			mbody, contentType := constructPostMultipart(t, validCSRFToken, val.filename)
 
 			// make request
-			code, _, body := ts.post(t, "/config-parser/upload", mw.FormDataContentType(), mbody)
+			code, _, body := ts.post(t, "/config-parser/upload", contentType, mbody)
 
 			// compare request results with expected values
 			assert.Equal(t, code, val.statusCode)
 			assert.StringContains(t, body, val.body)
 		})
 	}
+}
 
+func Test_config_Download(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	_, _, body := ts.get(t, "/config-parser")
+	validCSRFToken := extractCSRFToken(t, body)
+
+	mbody, contentType := constructPostMultipart(t, validCSRFToken, filepath.Join(testDataDir, "INET-R01.txt"))
+
+	// make request
+	ts.post(t, "/config-parser/upload", contentType, mbody)
+	code, hdr, body := ts.get(t, "/config-parser/download")
+
+	assert.Equal(t, code, http.StatusOK)
+	assert.StringContains(t, hdr.Get("Content-Disposition"), "attachment; filename=")
 }

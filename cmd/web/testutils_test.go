@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"github.com/alexedwards/scs/v2"
+	//log "github.com/sirupsen/logrus"
 	"html"
 	"io"
-	// "log"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"testing"
 )
@@ -25,6 +27,29 @@ func extractCSRFToken(t *testing.T, body string) string {
 		t.Fatal("no csrf token found in body")
 	}
 	return html.UnescapeString(string(matches[1]))
+}
+
+func constructPostMultipart(t *testing.T, CSRFToken, filename string) (*bytes.Buffer, string) {
+	mbody := new(bytes.Buffer)
+	mw := *multipart.NewWriter(mbody)
+	_ = mw.WriteField("osFamily", "ios")
+	_ = mw.WriteField("outputFormat", "csv")
+	_ = mw.WriteField("csrf_token", CSRFToken)
+
+	// attach file to form
+	file, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := mw.CreateFormFile("configFile", file.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(w, file); err != nil {
+		t.Fatal(err)
+	}
+	mw.Close()
+	return mbody, mw.FormDataContentType()
 }
 
 // Create a newTestApplication helper which returns an instance of our
