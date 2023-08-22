@@ -75,13 +75,26 @@ func Test_config_Upload(t *testing.T) {
 			http.StatusBadRequest,
 			"Bad Request",
 		},
+		{
+			"no CSRF data",
+			filepath.Join(testDataDir, "INET-R01.txt"),
+			"ios",
+			http.StatusBadRequest,
+			"Bad Request",
+		},
 	}
 
 	for _, val := range data {
 		t.Run(val.name, func(t *testing.T) {
 			// get CSRF token
-			_, _, body := ts.get(t, "/config-parser")
-			validCSRFToken := extractCSRFToken(t, body)
+			var validCSRFToken string
+
+			if val.name == "no CSRF data" {
+				validCSRFToken = ""
+			} else {
+				_, _, body := ts.get(t, "/config-parser")
+				validCSRFToken = extractCSRFToken(t, body)
+			}
 
 			// construct multipart form
 			mbody, contentType := constructPostMultipart(t, validCSRFToken, val.filename)
