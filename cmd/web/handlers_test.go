@@ -121,7 +121,7 @@ func Test_config_Download(t *testing.T) {
 
 	// make request
 	ts.post(t, "/config-parser/upload", contentType, mbody)
-	code, hdr, body := ts.get(t, "/config-parser/download")
+	code, hdr, _ := ts.get(t, "/config-parser/download")
 
 	assert.Equal(t, code, http.StatusOK)
 	assert.StringContains(t, hdr.Get("Content-Disposition"), "attachment; filename=")
