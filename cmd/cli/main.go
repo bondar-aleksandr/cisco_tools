@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bondar-aleksandr/ios-config-parsing/parser"
+	"github.com/bondar-aleksandr/cisco_parser"
 	"flag"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -23,13 +23,13 @@ func main() {
 	}
 	defer iFile.Close()
 
-	interface_map, err := parser.Parsing(iFile, *devtype)
+	interface_map, err := cisco_parser.ParseInterfaces(iFile, *devtype)
 	if err != nil {
 		log.Fatal(err)
 	}	
 
 	if *oFileName == "" {
-		*oFileName = parser.FileExtReplace(*iFileName, "csv")
+		*oFileName = cisco_parser.FileExtReplace(*iFileName, "csv")
 	}
 
 	oFile, err := os.Create(*oFileName)
@@ -41,7 +41,7 @@ func main() {
 	log.Infof("Saved to %s", oFile.Name())
 
 	if *jsonOut {		
-		jsonFileName := parser.FileExtReplace(*oFileName, "json")
+		jsonFileName := cisco_parser.FileExtReplace(*oFileName, "json")
 		jsonFile, err := os.Create(jsonFileName)
 		if err != nil {
 			log.Fatalf("Error in writing json data to file %s because of: %q", jsonFile.Name(), err)

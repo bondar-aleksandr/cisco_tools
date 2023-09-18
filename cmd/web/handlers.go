@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/bondar-aleksandr/ios-config-parsing/parser"
+	"github.com/bondar-aleksandr/cisco_parser"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/justinas/nosurf"
 	log "github.com/sirupsen/logrus"
@@ -84,7 +84,7 @@ func (app *application) configUpload(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.Write(fileBytes)
 
-	interface_map, err := parser.Parsing(buf, osFamily)
+	interface_map, err := cisco_parser.ParseInterfaces(buf, osFamily)
 	if err != nil {
 		data := &templateData{
 			Message: "It's not config file, or there is no interfaces in it. Parsing failed.",

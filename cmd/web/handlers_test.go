@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/bondar-aleksandr/ios-config-parsing/internal/assert"
+	"github.com/bondar-aleksandr/cisco_tools/internal/assert"
 	"net/http"
 	"path/filepath"
 	"testing"
