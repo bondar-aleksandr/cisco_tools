@@ -8,3 +8,4 @@ go.sum
 .idea
 .vscode
 test_data/
+downloads/

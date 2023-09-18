@@ -1,0 +1,183 @@
+{{define "title"}}SSH Client{{end}}
+{{define "main"}}
+
+<h2 id="cisco-ssh-client">Cisco ssh client</h2>
+<p>This app is a wrapper for <strong>networklore/netrasp</strong> package, which provides a convenient way to run commands to network devices via SSH.
+Though netrasp gives ability to work with other vendor&#39;s devices, this app is focused on cisco IOS-like commands (because of command error handlering).
+Written in go.
+<br>
+Github: <a href='https://github.com/bondar-aleksandr/cisco_ssh_client'>bondar-aleksandr/cisco_ssh_client</a> 
+</br>
+</p>
+<hr>
+<h2>Download</h2>
+<ul>
+    <li><a href='/downloads/cisco_ssh_client_windows.tar'>windows 64 bit</a></li>
+    <li><a href='/downloads/cisco_ssh_client_linux.tar'>linux amd64</a></li>
+</ul>
+<hr>
+<h2 id="usage">Usage</h2>
+<p>Typical folder structure for app to run is below</p>
+<pre><code>.
+└── app_root_dir/
+    ├── app_executable
+    ├── config/
+    │   └── config<span class="hljs-selector-class">.yml</span>
+    ├── input/
+    │   ├── devices<span class="hljs-selector-class">.csv</span>
+    │   ├── commandsFile_1
+    │   ├── ...
+    │   └── commandsFile_N
+    └── output/
+        ├── results<span class="hljs-selector-class">.txt</span>
+        ├── device1_commandStatus<span class="hljs-selector-class">.txt</span>
+        ├── ...
+        └── device1_commandStatus.txt
+</code></pre>
+<p>App reads config file from ./config/config.yml file, finds there input data (devices parameters, files with commands, etc.), 
+runs the commands specified, and puts output from each device to corresponding file located in &quot;output&quot; directory. Finally, it stores the summary
+status to &quot;output/results.txt&quot;</p>
+<h3 id="input-data-format">Input data format</h3>
+<hr>
+<p><strong>config.yml</strong> parameters meaning is below:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>client, ssh_timeout</td>
+<td>SSH timeout value (in seconds), used for all devices</td>
+</tr>
+<tr>
+<td>data, input_folder</td>
+<td>Directory where devices info and command files are located</td>
+</tr>
+<tr>
+<td>data, devices_data</td>
+<td>Filename for csv-formatted devices file (must be inside &quot;intput_folder&quot; directory)</td>
+</tr>
+<tr>
+<td>data, output_folder</td>
+<td>Directory where outputs are stored</td>
+</tr>
+<tr>
+<td>data, results_data</td>
+<td>Filename for summary status (will be placed to &quot;output_folder&quot;)</td>
+</tr>
+</tbody>
+</table>
+<p>config.yml example:</p>
+<pre><code class="lang-yaml"><span class="hljs-symbol">client:</span>
+<span class="hljs-symbol">  ssh_timeout:</span> <span class="hljs-number">2</span>
+<span class="hljs-symbol">data:</span>
+<span class="hljs-symbol">  input_folder:</span> <span class="hljs-string">"./input/"</span>
+<span class="hljs-symbol">  devices_data:</span> <span class="hljs-string">"devices.csv"</span>
+<span class="hljs-symbol">  output_folder:</span> <span class="hljs-string">"./output/"</span>
+<span class="hljs-symbol">  results_data:</span> <span class="hljs-string">"results.txt"</span>
+</code></pre>
+<hr>
+<p><strong>devices data file</strong> is csv file, it must contain the following fields</p>
+<pre><code><span class="hljs-selector-tag">hostname</span>,<span class="hljs-selector-tag">login</span>,<span class="hljs-selector-tag">password</span>,<span class="hljs-selector-tag">osType</span>,<span class="hljs-selector-tag">configure</span>,<span class="hljs-selector-tag">cmdFile</span>
+1<span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.1</span>,<span class="hljs-selector-tag">admin</span>,<span class="hljs-selector-tag">password</span>,<span class="hljs-selector-tag">ios</span>,<span class="hljs-selector-tag">true</span>,<span class="hljs-selector-tag">router_commands</span><span class="hljs-selector-class">.txt</span>
+<span class="hljs-selector-tag">r02</span><span class="hljs-selector-class">.testenv</span><span class="hljs-selector-class">.demo</span>,<span class="hljs-selector-tag">admin</span>,<span class="hljs-selector-tag">password</span>,<span class="hljs-selector-tag">ios</span>,<span class="hljs-selector-tag">true</span>,<span class="hljs-selector-tag">router_commands</span><span class="hljs-selector-class">.txt</span>
+1<span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.3</span>,<span class="hljs-selector-tag">admin</span>,<span class="hljs-selector-tag">password</span>,<span class="hljs-selector-tag">ios</span>,<span class="hljs-selector-tag">false</span>,<span class="hljs-selector-tag">switch_commands</span><span class="hljs-selector-class">.txt</span>
+</code></pre>
+<p>The fileds meaning:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hostname</td>
+<td>device ip/fqdn</td>
+</tr>
+<tr>
+<td>login</td>
+<td>ssh login</td>
+</tr>
+<tr>
+<td>password</td>
+<td>ssh password</td>
+</tr>
+<tr>
+<td>osType</td>
+<td>&quot;ios&quot; for cisco, other platform values specified by <strong>networklore/netrasp</strong> are allowed</td>
+</tr>
+<tr>
+<td>configure</td>
+<td>whether we want to issue config commands, boolean true/false</td>
+</tr>
+<tr>
+<td>cmdFile</td>
+<td>filename with actual commands</td>
+</tr>
+</tbody>
+</table>
+<p>In example above, we want to run config commands from <em>router_commands.txt</em> file on two devices: 1.1.1.1 and r02.testenv.demo,
+and non-config commands from <em>switch_commands.txt</em> on single device 1.1.1.3
+</p>
+<hr>
+<p><strong>Files with commands</strong> are simple text files, each line represent command we want to issue, for example:</p>
+<pre><code>
+show ip route
+<span class="hljs-keyword">sh</span> ip <span class="hljs-keyword">int</span> <span class="hljs-keyword">br</span>
+</code></pre>
+<p>or </p>
+<pre><code>
+<span class="hljs-keyword">int</span> lo10
+vrf forw <span class="hljs-keyword">TEST</span>
+<span class="hljs-built_in">ip</span> addr <span class="hljs-number">1.1</span><span class="hljs-meta">.1</span><span class="hljs-meta">.1</span> <span class="hljs-number">255.255</span><span class="hljs-meta">.255</span><span class="hljs-meta">.0</span>
+no shut
+</code></pre>
+<hr>
+<h3 id="output-data-format">Output data format</h3>
+<p>For configure option, the output for example above will be like this:</p>
+<pre><code>
+======================== <span class="hljs-string">"15 Sep 23 19:11 EEST"</span> =======================
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.1"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"int lo10"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">true</span>, <span class="hljs-string">error:</span> <span class="hljs-string">""</span>
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.1"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"vrf forw TEST"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">true</span>, <span class="hljs-string">error:</span> <span class="hljs-string">""</span>
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.1"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"ip addr 1.1.1.1 255.255.255.0"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">true</span>, <span class="hljs-string">error:</span> <span class="hljs-string">""</span>
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.1"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"no shut"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">true</span>, <span class="hljs-string">error:</span> <span class="hljs-string">""</span>
+</code></pre>
+<p>If command is incorrect, will get the following:</p>
+<pre><code>
+======================== <span class="hljs-string">"15 Sep 23 19:11 EEST"</span> =======================
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.1"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"asdf"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">false</span>, <span class="hljs-string">error:</span> <span class="hljs-string">"% Invalid input detected at '^' marker."</span>
+</code></pre>
+<p>If we chose configure = false option in devices csv file, the output will look like:</p>
+<pre><code>
+======================== <span class="hljs-string">"15 Sep 23 19:25 EEST"</span> =======================
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.3"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"sh int status"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">true</span>, <span class="hljs-string">error:</span> <span class="hljs-string">""</span> <span class="hljs-string">output:</span>
+
+Port         Name               Status       Vlan       Duplex  Speed Type
+Gi1<span class="hljs-regexp">/0/</span><span class="hljs-number">1</span>                         connected    <span class="hljs-number">1000</span>       a-full a<span class="hljs-number">-1000</span> <span class="hljs-number">10</span><span class="hljs-regexp">/100/</span><span class="hljs-number">1000</span>BaseTX
+Gi1<span class="hljs-regexp">/0/</span><span class="hljs-number">2</span>      -=Printer RICON=-  connected    <span class="hljs-number">4</span>            full    <span class="hljs-number">100</span> <span class="hljs-number">10</span><span class="hljs-regexp">/100/</span><span class="hljs-number">1000</span>BaseTX
+</code></pre>
+<p>If command is incorrect, will get the following:</p>
+<pre><code>
+======================== <span class="hljs-string">"15 Sep 23 19:24 EEST"</span> =======================
+<span class="hljs-string">device:</span> <span class="hljs-string">"1.1.1.3"</span>, <span class="hljs-string">command:</span> <span class="hljs-string">"asdf"</span>, <span class="hljs-string">accepted:</span> <span class="hljs-literal">false</span>, <span class="hljs-string">error:</span> <span class="hljs-string">"% Invalid input detected at '^' marker."</span>
+</code></pre>
+<p>The summary output file looks like this:</p>
+<pre><code><span class="hljs-code">+------------------+</span>---------<span class="hljs-code">+-----------+</span>-------------------------------+
+<span class="hljs-section">|      DEVICE      | OS TYPE | CONFIGURE |      COMMAND RUN STATUS       |
++------------------+---------+-----------+-------------------------------+</span>
+| 1.1.1.1          | ios     | false     | Success                       |
+| 1.1.1.3          | ios     | true      | Commands accepted with errors |
+<span class="hljs-section">| r02.testenv.demo | ios     | true      | Unreachable                   |
++------------------+---------+-----------+-------------------------------+</span>
+<span class="hljs-section">|                                              15 SEP 23 19:29 EEST      |
++------------------+---------+-----------+-------------------------------+</span>
+</code></pre>
+<h2 id="issues">Issues</h2>
+<p>Currently commands which contains &#39;+&#39; char makes app hangs, for example &quot;aaa group server tacacs+ ISE&quot;. The issue is reported to <strong>networklore/netrasp</strong></p>
+
+{{end}}
