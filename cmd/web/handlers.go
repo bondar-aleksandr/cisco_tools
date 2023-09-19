@@ -26,6 +26,12 @@ func (app *application) sshClient(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "sshClient.tmpl", data)
 }
 
+//handler for config-parser CLI
+func (app *application) configParserCli(w http.ResponseWriter, r *http.Request) {
+	data := &templateData{}
+app.render(w, http.StatusOK, "configParserCli.tmpl", data)
+}
+
 func (app *application) configParserHome(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{
 		MaxUploadSize:   appConfig.Server.MaxUpload,

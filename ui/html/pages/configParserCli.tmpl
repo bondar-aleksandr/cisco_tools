@@ -1,0 +1,94 @@
+{{define "title"}}Config parser (CLI){{end}}
+{{define "main"}}
+
+<h2>Cisco config parser CLI</h2>
+<p>This app is a CLI version of <a href="https://https://github.com/bondar-aleksandr/cisco_parser">https://github.com/bondar-aleksandr/cisco_parser</a></p>
+<br>
+Github: <a href='https://github.com/bondar-aleksandr/cisco_config_parser'>bondar-aleksandr/cisco_config_parser</a> 
+</br>
+<hr>
+<h2>Download</h2>
+<ul>
+    <li><a href='/downloads/config_parser_windows.tar'>windows 64 bit</a></li>
+    <li><a href='/downloads/config_parser_linux.tar'>linux amd64</a></li>
+</ul>
+<hr>
+<h2 id="usage">Usage</h2>
+<p>Upon startup app parses cli arguments in order to determine cisco config-file location, output location, and output format. As a result, we got .csv file with device&#39;s interfaces, which may be used later for analysis (import to excell for example). Also it&#39;s possible to get .josn formatted output as well.</p>
+<p><em>Supported device types</em>: IOS/IOS-XE/IOS-XR/NXOS</p>
+<p>Currently, the following interface values are parsed:</p>
+<ul>
+<li>name</li>
+<li>description</li>
+<li>ip address</li>
+<li>ip subnet</li>
+<li>vrf</li>
+<li>mtu</li>
+<li>input ACL</li>
+<li>output ACL</li>
+</ul>
+<p>CLI flags description is below:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Data Type</th>
+<th>Mandatory</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-i</td>
+<td>string</td>
+<td>yes</td>
+<td>Input cisco config-file location</td>
+</tr>
+<tr>
+<td>-o</td>
+<td>string</td>
+<td>no</td>
+<td>Output file location. Default is the same as input file, but with replaced extention</td>
+</tr>
+<tr>
+<td>-t</td>
+<td>string</td>
+<td>no</td>
+<td>OS type, possible values are &quot;ios&quot;, &quot;nxos&quot;. Default os &quot;ios&quot;</td>
+</tr>
+<tr>
+<td>-j</td>
+<td>--</td>
+<td>no</td>
+<td>Whether we need additional json output. Default is &quot;false&quot;</td>
+</tr>
+<tr>
+<td>-h</td>
+<td>--</td>
+<td>no</td>
+<td>Get help</td>
+</tr>
+</tbody>
+</table>
+<p>Launch app example:</p>
+<pre><code>main<span class="hljs-selector-class">.exe</span> -<span class="hljs-selector-tag">i</span> ciscoConfig.cfg
+</code></pre><p>In this case we will get the .csv file name &quot;ciscoConfig.csv&quot; in current working directory</p>
+<hr>
+<h2 id="output-data-format">Output data format</h2>
+<p>Let&#39;s suppose, we have interface config as follow:</p>
+<pre><code>!
+interface GigabitEthernet0/<span class="hljs-number">0</span>/<span class="hljs-number">2</span>
+ description TUNNEL-SOURCE_INET
+ <span class="hljs-built_in">ip</span> vrf forwarding INET
+ <span class="hljs-built_in">ip</span> address <span class="hljs-number">1.2</span><span class="hljs-meta">.3</span><span class="hljs-meta">.4</span> <span class="hljs-number">255.255</span><span class="hljs-meta">.255</span><span class="hljs-meta">.224</span>
+ no <span class="hljs-built_in">ip</span> redirects
+ no <span class="hljs-built_in">ip</span> proxy-arp
+ <span class="hljs-built_in">ip</span> access-group FROM_INET_IPSEC <span class="hljs-keyword">in</span>
+ negotiation auto
+!
+</code></pre><p>Output file in this case will look like:</p>
+<pre><code>Name,Description,Ip_addr,Subnet,Vrf,Mtu,ACLin,ACLout
+GigabitEthernet0/<span class="hljs-number">0</span>/<span class="hljs-number">2</span>,TUNNEL-SOURCE_INET,<span class="hljs-number">1.2</span><span class="hljs-number">.3</span><span class="hljs-number">.4</span>/<span class="hljs-number">27</span>,<span class="hljs-number">1.2</span><span class="hljs-number">.3</span><span class="hljs-number">.0</span>/<span class="hljs-number">27</span>,INET,,FROM_INET_IPSEC,
+</code></pre>
+
+{{end}}

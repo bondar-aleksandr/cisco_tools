@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/", app.home)
 	router.HandlerFunc(http.MethodGet, "/ssh-client", app.sshClient)
+	router.HandlerFunc(http.MethodGet, "/config-parser-cli", app.configParserCli)
 	router.Handler(http.MethodGet, "/config-parser", dynamic.ThenFunc(app.configParserHome))
     router.Handler(http.MethodPost, "/config-parser/upload", dynamic.ThenFunc(app.configUpload))
 	router.Handler(http.MethodGet, "/config-parser/download", dynamic.ThenFunc(app.configDownload))
