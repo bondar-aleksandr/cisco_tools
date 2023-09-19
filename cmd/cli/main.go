@@ -28,13 +28,12 @@ func main() {
 		ErrorLogger.Fatalf("No input data provided, use -h flag for help. Exiting...")
 	}
 	flag.Parse()
-	//TODO: panic recovery if there are problems with iFile
 
 	InfoLogger.Printf("Program started, got the following parameters:\ninput file: %s\noutput file: %s\ndevice type: %s\nJSON output: %v\n", *iFileName, *oFileName, *devtype, *jsonOut)
 
 	iFile, err := os.Open(*iFileName)
 	if err != nil {
-		ErrorLogger.Fatalf("Can not open file %s because of: %q", iFile.Name(), err)
+		ErrorLogger.Fatalf("Can not open file %q because of: %q", *iFileName, err)
 	}
 	defer iFile.Close()
 
@@ -49,21 +48,21 @@ func main() {
 
 	oFile, err := os.Create(*oFileName)
 	if err != nil {
-		ErrorLogger.Fatalf("Error in writing csv data to file %s because of: %q", oFile.Name(), err)
+		ErrorLogger.Fatalf("Error in writing csv data to file %q because of: %q", oFile.Name(), err)
 	}
 	defer oFile.Close()
 	interface_map.ToCSV(oFile)
-	InfoLogger.Printf("Saved to %s\n", oFile.Name())
+	InfoLogger.Printf("Saved to %q\n", oFile.Name())
 
 	if *jsonOut {		
 		jsonFileName := cisco_parser.FileExtReplace(*oFileName, "json")
 		jsonFile, err := os.Create(jsonFileName)
 		if err != nil {
-			ErrorLogger.Fatalf("Error in writing json data to file %s because of: %q", jsonFile.Name(), err)
+			ErrorLogger.Fatalf("Error in writing json data to file %q because of: %q", jsonFile.Name(), err)
 		}
 		defer jsonFile.Close()
 		interface_map.ToJSON(jsonFile)
-		InfoLogger.Printf("Saved to %s\n", jsonFileName)
+		InfoLogger.Printf("Saved to %q\n", jsonFileName)
 	}
 	InfoLogger.Printf("Finished! Time taken: %s\n", time.Since(start))
 }
