@@ -12,9 +12,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/bondar-aleksandr/cisco_parser v0.0.0-20230918112622-9b72171fcfe9
+require github.com/bondar-aleksandr/cisco_parser v0.0.0-20230920122038-7a935e2d7ed6
 
 require (
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 )
